@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Market Pulse — Live Stocks &amp; Crypto Watch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Live-aggregated stock and crypto news with spotlighting for tracked public figures like Trump and Musk, plus video where it exists.">
+<meta name="theme-color" content="#0B0F14">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B0F14'/%3E%3Cpath d='M8 40l10-14 8 8 12-20 10 12 8-6' fill='none' stroke='%2346D8AE' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<style>
+  :root{
+    --bg:#0B0F14; --surface:#121824; --surface2:#182131; --line:#242E3B;
+    --text:#E7ECF2; --dim:#8B96A3; --mint:#46D8AE; --amber:#E8A33D; --red:#E5544B; --blue:#5B9DF9; --purple:#c792ea;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;padding-bottom:60px;
+    background-image:
+      radial-gradient(ellipse 800px 460px at 12% -10%, rgba(70,216,174,0.07), transparent 60%),
+      radial-gradient(ellipse 600px 420px at 100% 5%, rgba(91,157,249,0.06), transparent 55%);
+    background-attachment:fixed;
+  }
+  a{color:var(--mint);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 20px;}
+
+  .topnav{position:sticky;top:0;z-index:40;background:rgba(11,15,20,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
+  .topnav-inner{max-width:1040px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .brand{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.04em;}
+  .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px rgba(70,216,174,0.7);animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%{opacity:1;}50%{opacity:.3;}100%{opacity:1;}}
+  .conn-pill{font-family:var(--mono);font-size:10.5px;color:var(--dim);border:1px solid var(--line);padding:4px 10px;border-radius:20px;}
+  .conn-pill.on{color:var(--mint);border-color:rgba(70,216,174,0.4);}
+  .conn-pill.off{color:var(--red);border-color:rgba(229,84,75,0.4);}
+
+  header{padding:28px 0 20px;border-bottom:1px solid var(--line);margin-bottom:20px;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;}
+  h1{font-family:var(--mono);font-size:26px;font-weight:600;margin:6px 0 8px;letter-spacing:-0.01em;}
+  h1 span{color:var(--mint);}
+  .sub{color:var(--dim);font-size:14px;line-height:1.55;max-width:680px;}
+  .disclaimer{margin-top:14px;background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--amber);padding:10px 14px;font-size:12px;color:var(--dim);border-radius:2px;line-height:1.5;}
+  .disclaimer b{color:var(--amber);}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:20px;box-shadow:0 20px 50px -35px rgba(0,0,0,0.7);}
+  .panel-title{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .filter-btn{
+    background:transparent;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);
+    font-size:12px;padding:8px 14px;border-radius:20px;cursor:pointer;transition:all .15s;
+  }
+  .filter-btn:hover{border-color:var(--mint);color:var(--text);}
+  .filter-btn.active{background:var(--mint);color:#04140F;border-color:var(--mint);font-weight:600;}
+  button.action{background:var(--mint);color:#04140F;border:none;font-family:var(--mono);font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:6px;cursor:pointer;transition:filter .15s, transform .15s;}
+  button.action:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  button.secondary{background:transparent;border:1px solid var(--line);color:var(--text);font-family:var(--mono);font-size:12.5px;padding:9px 16px;border-radius:6px;cursor:pointer;}
+  button.secondary:hover{border-color:var(--mint);}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+  input[type=text]{background:var(--surface2);border:1px solid var(--line);color:var(--text);font-family:var(--mono);font-size:12.5px;padding:9px 11px;border-radius:6px;outline:none;}
+  input[type=text]:focus{border-color:var(--mint);}
+  label.check{font-family:var(--mono);font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px;cursor:pointer;}
+
+  .status{font-family:var(--mono);font-size:11.5px;color:var(--dim);}
+
+  /* watchlist chips */
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .chip{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--line);border-radius:20px;padding:6px 6px 6px 12px;font-family:var(--mono);font-size:12px;}
+  .chip button{background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;line-height:1;padding:3px 6px;border-radius:50%;}
+  .chip button:hover{color:var(--red);background:rgba(229,84,75,0.1);}
+  .add-figure{display:flex;gap:8px;margin-top:12px;}
+  .add-figure input{flex:1;min-width:160px;}
+
+  /* feed */
+  #spotlightSection{margin-bottom:24px;}
+  .section-head{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+  .section-head span.count{color:var(--text);}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:10px;transition:border-color .15s;}
+  .card:hover{border-color:rgba(70,216,174,0.35);}
+  .card.spotlight{border-color:rgba(232,163,61,0.5);background:linear-gradient(180deg, rgba(232,163,61,0.06), var(--surface) 40%);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+  .card-title{font-size:14.5px;font-weight:600;line-height:1.4;}
+  .card-title a{color:var(--text);}
+  .card-title a:hover{color:var(--mint);}
+  .card-meta{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:var(--mono);font-size:10.5px;color:var(--dim);}
+  .badge{border:1px solid var(--line);padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;}
+  .badge.figure{color:var(--amber);border-color:rgba(232,163,61,0.4);background:rgba(232,163,61,0.08);}
+  .badge.asset{color:var(--blue);border-color:rgba(91,157,249,0.4);}
+  .badge.category-crypto{color:var(--mint);}
+  .badge.category-stocks{color:var(--dim);}
+  .badge.category-social{color:var(--purple);border-color:rgba(199,146,234,0.4);}
+  .mover-flag{color:var(--red);font-weight:700;}
+  .empty{font-family:var(--mono);font-size:12.5px;color:var(--dim);padding:24px 0;text-align:center;}
+
+  .card-actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+  .card-actions button{background:transparent;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:11px;padding:6px 11px;border-radius:5px;cursor:pointer;}
+  .card-actions button:hover{border-color:var(--mint);color:var(--text);}
+
+  .tweet-embed-wrap{margin-top:12px;max-width:550px;}
+  .video-results{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;}
+  .video-results .vr-label{font-family:var(--mono);font-size:10.5px;color:var(--amber);margin-bottom:8px;line-height:1.5;}
+  .video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+  .video-card{display:block;background:var(--surface2);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .video-card:hover{border-color:var(--mint);}
+  .video-card img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover;background:#000;}
+  .video-card .vc-title{font-size:11.5px;padding:8px 9px 2px;line-height:1.35;color:var(--text);}
+  .video-card .vc-channel{font-size:10px;padding:0 9px 9px;color:var(--dim);font-family:var(--mono);}
+
+  /* price panel */
+  .price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;}
+  .price-card{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
+  .price-card.err{opacity:.6;}
+  .pc-top{display:flex;justify-content:space-between;align-items:baseline;}
+  .pc-symbol{font-family:var(--mono);font-weight:700;font-size:14px;}
+  .pc-type{font-family:var(--mono);font-size:9.5px;color:var(--dim);text-transform:uppercase;}
+  .pc-price{font-family:var(--mono);font-size:19px;margin-top:4px;}
+  .pc-change{font-family:var(--mono);font-size:12px;margin-left:8px;}
+  .pc-change.up{color:var(--mint);}
+  .pc-change.down{color:var(--red);}
+  .pc-indicators{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;font-family:var(--mono);font-size:10.5px;}
+  .pc-ind{border:1px solid var(--line);border-radius:4px;padding:3px 7px;color:var(--dim);}
+  .pc-ind.overbought{color:var(--red);border-color:rgba(229,84,75,0.4);}
+  .pc-ind.oversold{color:var(--mint);border-color:rgba(70,216,174,0.4);}
+  .pc-ind.bullish{color:var(--mint);border-color:rgba(70,216,174,0.4);}
+  .pc-ind.bearish{color:var(--red);border-color:rgba(229,84,75,0.4);}
+  .pc-ind.spike{color:var(--amber);border-color:rgba(232,163,61,0.4);}
+  .pc-remove{margin-top:10px;background:none;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:10px;padding:4px 8px;border-radius:5px;cursor:pointer;}
+  .pc-remove:hover{border-color:var(--red);color:var(--red);}
+  .pc-err-msg{font-family:var(--mono);font-size:10.5px;color:var(--red);margin-top:6px;line-height:1.4;}
+  .sparkline{margin-top:8px;display:block;width:100%;height:32px;}
+
+  .alert-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .alert-row:last-child{border-bottom:none;}
+  .alert-main .alert-label{font-weight:600;}
+  .alert-main .alert-note{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-top:3px;line-height:1.4;max-width:520px;}
+  .alert-time{font-family:var(--mono);font-size:10.5px;color:var(--dim);white-space:nowrap;}
+
+  footer{max-width:1040px;margin:30px auto 0;padding:0 20px;color:var(--dim);font-size:11.5px;font-family:var(--mono);line-height:1.6;}
+  @media (max-width:600px){ h1{font-size:21px;} }
+</style>
+</head>
+<body>
+<div class="topnav">
+  <div class="topnav-inner">
+    <div class="brand"><span class="live-dot"></span>MARKET PULSE</div>
+    <span class="conn-pill" id="connPill">connecting…</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Live aggregator</div>
+    <h1>Market <span>Pulse</span></h1>
+    <p class="sub">Pulls stock and crypto coverage from major outlets (via direct RSS + Google News aggregation) and, when configured, live X posts — then spotlights anything from your tracked figures, with video where it genuinely exists.</p>
+    <div class="disclaimer">
+      <b>Read this first.</b> Not financial advice, not a guarantee of completeness, and nothing here is a buy/sell recommendation. It can't tap into live TV broadcast audio — no consumer-accessible API exists for that. X posts show their real embedded video straight from X's own widget when a tracked account's post has one. The "Find video" button on any card searches YouTube for <i>possible</i> related clips — those are unverified candidates for you to check, never a confirmed match. The ⚡ "mover" flag is keyword-based, not sentiment analysis. The price panel below shows standard technical indicators (RSI, moving averages, MACD, volume) computed from delayed public data — these describe what price already did, they don't predict what it will do next, and no combination of them is "accurate" at calling entries/exits. Nothing in this app places trades or connects to MetaTrader or any broker.
+    </div>
+  </header>
+
+  <div class="panel">
+    <div class="panel-title">
+      <span>Price &amp; indicators — tracked assets</span>
+      <span class="status" id="pricesStatus">—</span>
+    </div>
+    <div id="priceGrid" class="price-grid"></div>
+    <div class="add-figure">
+      <input type="text" id="assetSymbolInput" placeholder="Add symbol (e.g. AAPL, ETH)" style="max-width:220px;">
+      <button class="action" id="addAssetBtn">Track</button>
+      <span class="status" id="assetHint"></span>
+    </div>
+  </div>
+
+  <div class="panel" id="alertsPanel" style="display:none;">
+    <div class="panel-title">
+      <span>Indicator alerts — fresh crossovers only, not trade calls</span>
+      <span class="status" id="alertsStatus"></span>
+    </div>
+    <div id="alertsList"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <span>Tracked figures — spotlighted across every feed</span>
+      <span class="status" id="watchlistStatus"></span>
+    </div>
+    <div class="chip-row" id="watchlistChips"></div>
+    <div class="add-figure">
+      <input type="text" id="figureNameInput" placeholder="Name (e.g. Jerome Powell)">
+      <input type="text" id="figureAliasInput" placeholder="Match words, comma-separated (e.g. powell, jerome powell)">
+      <button class="action" id="addFigureBtn">Add</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <span>Feed filters</span>
+      <span class="status" id="feedStatus">—</span>
+    </div>
+    <div class="row">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="spotlight">Spotlight only</button>
+      <button class="filter-btn" data-filter="stocks">Stocks</button>
+      <button class="filter-btn" data-filter="crypto">Crypto</button>
+      <button class="filter-btn" data-filter="social">X / Live posts</button>
+      <input type="text" id="keywordFilter" placeholder="Filter by keyword…" style="min-width:160px;">
+      <button class="secondary" id="refreshBtn" style="margin-left:auto;">Refresh now</button>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <label class="check">
+        <input type="checkbox" id="notifyToggle" style="accent-color:var(--mint);">
+        Notify me when a tracked figure appears
+      </label>
+    </div>
+  </div>
+
+  <div id="spotlightSection" style="display:none;">
+    <div class="section-head">🔶 Spotlight — tracked figures <span class="count" id="spotlightCount">0</span></div>
+    <div id="spotlightFeed"></div>
+  </div>
+
+  <div class="section-head">All coverage <span class="count" id="mainCount">0</span></div>
+  <div id="mainFeed"></div>
+</div>
+
+<footer>
+  Sources: CNBC, MarketWatch, Yahoo Finance, Investing.com, Benzinga, CoinDesk, Cointelegraph, Decrypt, The Block, plus Google News aggregation queries. Prices/indicators: CoinGecko (crypto) and Stooq (stocks, delayed). X/Twitter live posts require your own <code>X_BEARER_TOKEN</code>; YouTube video search requires your own <code>YOUTUBE_API_KEY</code> (see README). Every source is best-effort. Re-check anything time-sensitive against the original source before acting on it. This tool does not connect to MetaTrader, any broker, or any exchange, and does not place trades.
+</footer>
+
+<script>
+let CONFIG = null;
+let currentFilter = 'all';
+let keywordQuery = '';
+
+async function loadConfig(){
+  const res = await fetch('/api/config');
+  CONFIG = await res.json();
+  renderWatchlist();
+  const xNote = CONFIG.twitterEnabled ? 'X live search: on' : 'X live search: off';
+  const ytNote = CONFIG.youtubeEnabled ? 'YouTube search: on' : 'YouTube search: off';
+  document.getElementById('watchlistStatus').textContent = `${xNote} · ${ytNote}`;
+}
+
+function renderWatchlist(){
+  const wrap = document.getElementById('watchlistChips');
+  wrap.innerHTML = CONFIG.watchlist.map((p,i) => `
+    <div class="chip">${p.name}<button data-idx="${i}" title="Remove">×</button></div>
+  `).join('') || '<span class="status">No figures tracked yet — add one below.</span>';
+  wrap.querySelectorAll('button[data-idx]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = Number(btn.dataset.idx);
+      const updated = CONFIG.watchlist.filter((_,i) => i !== idx);
+      await saveWatchlist(updated);
+    });
+  });
+}
+
+async function saveWatchlist(list){
+  const res = await fetch('/api/watchlist', {
+    method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({watchlist:list})
+  });
+  const data = await res.json();
+  if(data.ok){ CONFIG.watchlist = data.watchlist; renderWatchlist(); }
+}
+
+document.getElementById('addFigureBtn').addEventListener('click', async () => {
+  const nameEl = document.getElementById('figureNameInput');
+  const aliasEl = document.getElementById('figureAliasInput');
+  const name = nameEl.value.trim();
+  if(!name) return;
+  const aliases = aliasEl.value.trim() ? aliasEl.value.split(',').map(s=>s.trim()).filter(Boolean) : [name.toLowerCase()];
+  await saveWatchlist([...CONFIG.watchlist, {name, aliases}]);
+  nameEl.value = ''; aliasEl.value = '';
+});
+
+function fmtTime(iso){
+  const d = new Date(iso);
+  const diffMin = Math.round((Date.now()-d.getTime())/60000);
+  if(diffMin < 1) return 'just now';
+  if(diffMin < 60) return diffMin+'m ago';
+  const diffHr = Math.round(diffMin/60);
+  if(diffHr < 24) return diffHr+'h ago';
+  return d.toLocaleDateString();
+}
+
+// ---- X/Twitter embed (real video, straight from X's own widget) ----
+function toggleTweetEmbed(btn, url, itemId){
+  const card = btn.closest('.card');
+  let wrap = card.querySelector('.tweet-embed-wrap');
+  if(wrap){ wrap.remove(); btn.textContent = 'Show post'; return; }
+  wrap = document.createElement('div');
+  wrap.className = 'tweet-embed-wrap';
+  wrap.innerHTML = `<blockquote class="twitter-tweet"><a href="${url}"></a></blockquote>`;
+  card.querySelector('.card-actions').insertAdjacentElement('afterend', wrap);
+  btn.textContent = 'Hide post';
+  if(window.twttr && window.twttr.widgets) window.twttr.widgets.load(wrap);
+}
+
+// ---- YouTube candidate-video search (unverified — see disclaimer) ----
+async function findVideo(btn, item){
+  const card = btn.closest('.card');
+  let panel = card.querySelector('.video-results');
+  if(panel){ panel.remove(); btn.textContent = '🎥 Find video'; return; }
+
+  if(!CONFIG.youtubeEnabled){
+    alert('YouTube search is not enabled on this server — set YOUTUBE_API_KEY to turn it on. See the README.');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Searching…';
+  const query = [...(item.figures||[]), item.title].join(' ').slice(0, 100);
+  const publishedAfter = new Date(new Date(item.publishedAt).getTime() - 3*24*60*60*1000).toISOString();
+  try{
+    const res = await fetch(`/api/video-search?q=${encodeURIComponent(query)}&publishedAfter=${encodeURIComponent(publishedAfter)}`);
+    const data = await res.json();
+    panel = document.createElement('div');
+    panel.className = 'video-results';
+    if(!data.ok){
+      panel.innerHTML = `<div class="vr-label">Video search failed: ${data.reason || 'unknown error'}</div>`;
+    } else if(!data.items.length){
+      panel.innerHTML = `<div class="vr-label">No candidate videos found for this one.</div>`;
+    } else {
+      panel.innerHTML = `<div class="vr-label">⚠ Possible related videos — not verified matches. Confirm it's actually the right clip before treating it as this statement.</div>
+        <div class="video-grid">${data.items.map(v => `
+          <a class="video-card" href="${v.url}" target="_blank" rel="noopener">
+            <img src="${v.thumbnail || ''}" alt="">
+            <div class="vc-title">${v.title}</div>
+            <div class="vc-channel">${v.channel}</div>
+          </a>`).join('')}</div>`;
+    }
+    card.querySelector('.card-actions').insertAdjacentElement('afterend', panel);
+    btn.textContent = 'Hide video results';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function cardHtml(item){
+  const figureBadges = (item.figures||[]).map(f=>`<span class="badge figure">${f}</span>`).join('');
+  const assetBadges = (item.assets||[]).slice(0,4).map(a=>`<span class="badge asset">${a}</span>`).join('');
+  const moverFlag = item.moverScore >= 2 ? `<span class="mover-flag">⚡ possible market mover</span>` : '';
+  const isTweet = item.category === 'social';
+  return `<div class="card ${item.spotlight?'spotlight':''}" data-id="${item.id}">
+    <div class="card-top">
+      <div class="card-title"><a href="${item.link}" target="_blank" rel="noopener">${item.title}</a></div>
+    </div>
+    <div class="card-meta">
+      <span class="badge category-${item.category}">${item.category}</span>
+      <span>${item.source}</span>
+      <span>${fmtTime(item.publishedAt)}</span>
+      ${figureBadges}${assetBadges}${moverFlag}
+    </div>
+    <div class="card-actions">
+      ${isTweet ? `<button onclick='toggleTweetEmbed(this, ${JSON.stringify(item.link)}, ${JSON.stringify(item.id)})'>Show post</button>` : ''}
+      <button onclick='findVideo(this, ${JSON.stringify(item).replace(/'/g,"&apos;")})'>🎥 Find video</button>
+    </div>
+  </div>`;
+}
+
+function passesFilter(item, filter){
+  if(filter !== 'all'){
+    if(filter === 'spotlight' && !item.spotlight) return false;
+    if(filter === 'social' && item.category !== 'social') return false;
+    if((filter === 'stocks' || filter === 'crypto') && item.category !== filter) return false;
+  }
+  if(keywordQuery){
+    const hay = `${item.title} ${item.summary||''} ${(item.figures||[]).join(' ')} ${(item.assets||[]).join(' ')}`.toLowerCase();
+    if(!hay.includes(keywordQuery)) return false;
+  }
+  return true;
+}
+
+function renderFeed(items){
+  const spotlightItems = items.filter(i=>i.spotlight);
+  const spotlightSection = document.getElementById('spotlightSection');
+  const spotlightFeed = document.getElementById('spotlightFeed');
+  if(currentFilter === 'all' && !keywordQuery && spotlightItems.length){
+    spotlightSection.style.display = 'block';
+    spotlightFeed.innerHTML = spotlightItems.slice(0,8).map(cardHtml).join('');
+    document.getElementById('spotlightCount').textContent = spotlightItems.length;
+    if(window.twttr && window.twttr.widgets) window.twttr.widgets.load(spotlightFeed);
+  } else {
+    spotlightSection.style.display = 'none';
+  }
+
+  const excludeSpotlighted = currentFilter === 'all' && !keywordQuery;
+  const mainItems = items.filter(i => passesFilter(i, currentFilter) && !(excludeSpotlighted && i.spotlight));
+  const mainFeed = document.getElementById('mainFeed');
+  document.getElementById('mainCount').textContent = mainItems.length;
+  mainFeed.innerHTML = mainItems.length ? mainItems.map(cardHtml).join('') : '<div class="empty">No items match this filter yet — try Refresh now, or widen the filter.</div>';
+}
+
+let allItems = [];
+async function loadFeed(){
+  const res = await fetch('/api/feed?limit=200');
+  const data = await res.json();
+  allItems = data.items;
+  renderFeed(allItems);
+  document.getElementById('feedStatus').textContent = `${allItems.length} items · last loaded ${new Date().toLocaleTimeString()}`;
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderFeed(allItems);
+  });
+});
+
+let keywordDebounce = null;
+document.getElementById('keywordFilter').addEventListener('input', (e)=>{
+  clearTimeout(keywordDebounce);
+  keywordDebounce = setTimeout(()=>{
+    keywordQuery = e.target.value.trim().toLowerCase();
+    renderFeed(allItems);
+  }, 250);
+});
+
+document.getElementById('refreshBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true; btn.textContent = 'Refreshing…';
+  try{
+    await fetch('/api/refresh', {method:'POST'});
+    await loadFeed();
+  } finally {
+    btn.disabled = false; btn.textContent = 'Refresh now';
+  }
+});
+
+// ---- browser notifications when a tracked figure shows up ----
+const notifyToggle = document.getElementById('notifyToggle');
+notifyToggle.addEventListener('change', async ()=>{
+  if(notifyToggle.checked && 'Notification' in window && Notification.permission === 'default'){
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted') notifyToggle.checked = false;
+  }
+});
+
+// ---- live updates via SSE ----
+function connectStream(){
+  const pill = document.getElementById('connPill');
+  const es = new EventSource('/api/stream');
+  es.addEventListener('connected', ()=>{ pill.textContent = 'live'; pill.className = 'conn-pill on'; });
+  es.addEventListener('items', (e)=>{
+    const items = JSON.parse(e.data);
+    if(!items.length) return;
+    allItems = [...items, ...allItems].slice(0, 400);
+    renderFeed(allItems);
+    document.getElementById('feedStatus').textContent = `${allItems.length} items · updated ${new Date().toLocaleTimeString()}`;
+    if(notifyToggle.checked && 'Notification' in window && Notification.permission === 'granted'){
+      items.filter(i=>i.spotlight).forEach(i=>{
+        new Notification(`${i.figures.join(', ')}: ${i.title}`, { body: i.source });
+      });
+    }
+  });
+  es.addEventListener('prices', (e)=>{
+    const data = JSON.parse(e.data);
+    latestPriceSnapshot = data.snapshot;
+    renderPrices();
+    document.getElementById('pricesStatus').textContent = `updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
+  });
+  es.addEventListener('alerts', (e)=>{
+    const newAlerts = JSON.parse(e.data);
+    if(!newAlerts.length) return;
+    allAlerts = [...newAlerts, ...allAlerts].slice(0,100);
+    renderAlerts();
+    if(notifyToggle.checked && 'Notification' in window && Notification.permission === 'granted'){
+      newAlerts.forEach(a => new Notification(a.label, { body: a.note }));
+    }
+  });
+  es.onerror = ()=>{ pill.textContent = 'reconnecting…'; pill.className = 'conn-pill off'; };
+}
+
+// ---- Prices & indicators ----
+function fmtPrice(v){
+  if(v == null) return '—';
+  return v >= 1000 ? v.toLocaleString(undefined,{maximumFractionDigits:0}) : v.toLocaleString(undefined,{maximumFractionDigits: v < 10 ? 4 : 2});
+}
+
+function sparklineSvg(points){
+  if(!points || points.length < 2) return '';
+  const w = 200, h = 32, pad = 2;
+  const min = Math.min(...points), max = Math.max(...points);
+  const range = (max - min) || 1;
+  const step = (w - pad*2) / (points.length - 1);
+  const pts = points.map((p,i) => `${(pad + i*step).toFixed(1)},${(h - pad - ((p-min)/range)*(h-pad*2)).toFixed(1)}`).join(' ');
+  const up = points[points.length-1] >= points[0];
+  return `<svg class="sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${up?'#46D8AE':'#E5544B'}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+
+function priceCardHtml(entry){
+  if(!entry || !entry.ok){
+    return `<div class="price-card err">
+      <div class="pc-top"><span class="pc-symbol">${entry?.symbol||'?'}</span></div>
+      <div class="pc-err-msg">${entry?.reason || 'Unavailable right now.'}</div>
+      <button class="pc-remove" onclick='removeAsset(${JSON.stringify(entry?.symbol)})'>Untrack</button>
+    </div>`;
+  }
+  const changeClass = entry.change24h == null ? '' : (entry.change24h >= 0 ? 'up' : 'down');
+  const changeStr = entry.change24h == null ? '' : `<span class="pc-change ${changeClass}">${entry.change24h >= 0 ? '+' : ''}${entry.change24h.toFixed(2)}%</span>`;
+  const inds = [];
+  if(entry.rsi != null) inds.push(`<span class="pc-ind ${entry.rsiZone}">RSI ${entry.rsi} · ${entry.rsiZone}</span>`);
+  if(entry.smaTrend && entry.smaTrend !== 'neutral') inds.push(`<span class="pc-ind ${entry.smaTrend}">SMA20/50 ${entry.smaTrend}</span>`);
+  if(entry.macdHistogram != null) inds.push(`<span class="pc-ind">MACD hist ${entry.macdHistogram >= 0 ? '+' : ''}${entry.macdHistogram}</span>`);
+  if(entry.volumeSpike && entry.volumeSpike.isSpike) inds.push(`<span class="pc-ind spike">Vol ${entry.volumeSpike.ratio.toFixed(1)}x avg</span>`);
+  return `<div class="price-card">
+    <div class="pc-top">
+      <span class="pc-symbol">${entry.symbol}</span>
+      <span class="pc-type">${entry.type}</span>
+    </div>
+    <div class="pc-price">$${fmtPrice(entry.price)}${changeStr}</div>
+    ${sparklineSvg(entry.sparkline)}
+    <div class="pc-indicators">${inds.join('') || '<span class="pc-ind">Not enough history yet</span>'}</div>
+    <button class="pc-remove" onclick='removeAsset(${JSON.stringify(entry.symbol)})'>Untrack</button>
+  </div>`;
+}
+
+let latestPriceSnapshot = {};
+function renderPrices(){
+  const grid = document.getElementById('priceGrid');
+  const symbols = Object.keys(latestPriceSnapshot);
+  grid.innerHTML = symbols.length
+    ? symbols.map(s => priceCardHtml(latestPriceSnapshot[s])).join('')
+    : '<div class="empty">No assets tracked yet — add one below.</div>';
+}
+
+async function loadPrices(){
+  try{
+    const res = await fetch('/api/prices');
+    const data = await res.json();
+    if(data.ok){
+      latestPriceSnapshot = data.snapshot;
+      renderPrices();
+      document.getElementById('pricesStatus').textContent = `updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
+    }
+  }catch(e){
+    document.getElementById('pricesStatus').textContent = 'failed to load prices';
+  }
+}
+
+document.getElementById('addAssetBtn').addEventListener('click', async ()=>{
+  const input = document.getElementById('assetSymbolInput');
+  const sym = input.value.trim().toUpperCase();
+  if(!sym) return;
+  const current = Object.keys(latestPriceSnapshot);
+  const next = [...new Set([...current, sym])];
+  const res = await fetch('/api/assets', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({symbols: next})});
+  const data = await res.json();
+  const hint = document.getElementById('assetHint');
+  if(!data.ok){ hint.textContent = data.reason; hint.style.color = 'var(--red)'; return; }
+  hint.textContent = ''; input.value = '';
+  await loadPrices();
+});
+
+async function removeAsset(sym){
+  const next = Object.keys(latestPriceSnapshot).filter(s => s !== sym);
+  const res = await fetch('/api/assets', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({symbols: next})});
+  const data = await res.json();
+  if(data.ok) await loadPrices();
+}
+
+// ---- Alerts ----
+function alertRowHtml(a){
+  return `<div class="alert-row">
+    <div class="alert-main">
+      <div class="alert-label">${a.label}</div>
+      <div class="alert-note">${a.note}</div>
+    </div>
+    <div class="alert-time">${fmtTime(a.at)}</div>
+  </div>`;
+}
+
+let allAlerts = [];
+function renderAlerts(){
+  const panel = document.getElementById('alertsPanel');
+  const list = document.getElementById('alertsList');
+  if(!allAlerts.length){ panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  document.getElementById('alertsStatus').textContent = `${allAlerts.length} recent`;
+  list.innerHTML = allAlerts.slice(0,20).map(alertRowHtml).join('');
+}
+
+async function loadAlerts(){
+  const res = await fetch('/api/alerts?limit=50');
+  const data = await res.json();
+  allAlerts = data.alerts || [];
+  renderAlerts();
+}
+
+(async function init(){
+  await loadConfig();
+  await loadFeed();
+  await loadPrices();
+  await loadAlerts();
+  connectStream();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "market-pulse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Live stock & crypto news aggregator with figure/keyword spotlighting (Trump, Musk, etc.) and video lookup",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "rss-parser": "^3.13.0",
+    "dotenv": "^16.4.5"
+  }
+}
