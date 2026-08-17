@@ -135,9 +135,22 @@
 
   .alert-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
   .alert-row:last-child{border-bottom:none;}
+  .alert-row.strong{border-left:2px solid #E5544B;padding-left:8px;}
+  .alert-row.mild{border-left:2px solid var(--line);padding-left:8px;}
   .alert-main .alert-label{font-weight:600;}
+  .alert-main .alert-label .sev-badge{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-right:6px;padding:1px 5px;border-radius:3px;border:1px solid var(--line);color:var(--dim);}
+  .alert-row.strong .sev-badge{color:#E5544B;border-color:#E5544B;}
   .alert-main .alert-note{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-top:3px;line-height:1.4;max-width:520px;}
   .alert-time{font-family:var(--mono);font-size:10.5px;color:var(--dim);white-space:nowrap;}
+  .pc-confluence{margin-top:8px;font-size:11px;}
+  .pc-confluence summary{cursor:pointer;color:var(--dim);font-family:var(--mono);list-style:none;}
+  .pc-confluence summary::-webkit-details-marker{display:none;}
+  .pc-conf-hint{opacity:.6;}
+  .pc-conf-detail{margin-top:6px;display:flex;flex-direction:column;gap:4px;}
+  .pc-conf-row{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;color:var(--dim);}
+  .pc-conf-dot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--line);}
+  .pc-conf-dot.up{background:#46D8AE;}
+  .pc-conf-dot.down{background:#E5544B;}
 
   /* TradingView any-symbol tracker */
   .tv-ticker-box .tradingview-widget-container{height:46px;}
@@ -518,6 +531,20 @@ function sparklineSvg(points){
   return `<svg class="sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${up?'#46D8AE':'#E5544B'}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 }
 
+// Renders the raw indicator tally — how many of the tracked indicators are
+// leaning up/down/flat right now, plus each individual reading. This is a
+// count, not a conclusion: it deliberately has no buy/sell/long/short label,
+// because agreement across a handful of lagging indicators still isn't a
+// prediction of what price does next.
+function confluenceHtml(c){
+  if(!c || !c.total) return '';
+  const rows = c.readings.map(r => `<div class="pc-conf-row"><span class="pc-conf-dot ${r.lean}"></span><span>${r.detail}</span></div>`).join('');
+  return `<details class="pc-confluence">
+    <summary>${c.up} up · ${c.down} down · ${c.flat} flat <span class="pc-conf-hint">(reading counts, not a signal)</span></summary>
+    <div class="pc-conf-detail">${rows}</div>
+  </details>`;
+}
+
 function priceCardHtml(entry){
   if(!entry || !entry.ok){
     return `<div class="price-card err">
@@ -533,6 +560,7 @@ function priceCardHtml(entry){
   if(entry.smaTrend && entry.smaTrend !== 'neutral') inds.push(`<span class="pc-ind ${entry.smaTrend}">SMA20/50 ${entry.smaTrend}</span>`);
   if(entry.macdHistogram != null) inds.push(`<span class="pc-ind">MACD hist ${entry.macdHistogram >= 0 ? '+' : ''}${entry.macdHistogram}</span>`);
   if(entry.volumeSpike && entry.volumeSpike.isSpike) inds.push(`<span class="pc-ind spike">Vol ${entry.volumeSpike.ratio.toFixed(1)}x avg</span>`);
+  const conf = confluenceHtml(entry.confluence);
   return `<div class="price-card">
     <div class="pc-top">
       <span class="pc-symbol">${entry.symbol}</span>
@@ -541,6 +569,7 @@ function priceCardHtml(entry){
     <div class="pc-price">$${fmtPrice(entry.price)}${changeStr}</div>
     ${sparklineSvg(entry.sparkline)}
     <div class="pc-indicators">${inds.join('') || '<span class="pc-ind">Not enough history yet</span>'}</div>
+    ${conf}
     <button class="pc-remove" onclick='removeAsset(${JSON.stringify(entry.symbol)})'>Untrack</button>
   </div>`;
 }
@@ -591,9 +620,11 @@ async function removeAsset(sym){
 
 // ---- Alerts ----
 function alertRowHtml(a){
-  return `<div class="alert-row">
+  const sevClass = a.severity === 'strong' ? 'strong' : 'mild';
+  const badge = a.severity === 'strong' ? '<span class="sev-badge">Strong</span>' : '<span class="sev-badge">Mild</span>';
+  return `<div class="alert-row ${sevClass}">
     <div class="alert-main">
-      <div class="alert-label">${a.label}</div>
+      <div class="alert-label">${badge}${a.label}</div>
       <div class="alert-note">${a.note}</div>
     </div>
     <div class="alert-time">${fmtTime(a.at)}</div>
