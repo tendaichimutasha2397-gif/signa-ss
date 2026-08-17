@@ -76,6 +76,36 @@ orders; that's a separate system from this one and isn't something I've
 wired up here, since doing so in service of "accurate" auto-signals would
 just be automating the same unreliable premise above.
 
+## Any-symbol tracker (TradingView)
+
+The price panel above is limited to the fixed list in `lib/prices.js`'s
+`ASSET_MAP` (CoinGecko/Stooq-backed, needed for the custom RSI/SMA/MACD
+indicators). The separate **"Any-symbol tracker"** panel removes that
+limit: it embeds TradingView's own official widgets, so it can show
+literally any symbol TradingView covers — stocks on any exchange, crypto
+pairs, forex, indices, futures, commodities — not just the small tracked
+list.
+
+For each symbol you add you get:
+- TradingView's live, interactive chart widget
+- TradingView's own **Technical Analysis** gauge — their mechanical
+  Buy/Sell/Neutral summary, aggregated from standard moving averages and
+  oscillators. This is TradingView's data and TradingView's computation,
+  displayed as-is and clearly attributed as theirs — this app doesn't
+  compute or claim its own signal on top of it.
+- A ticker tape strip across the top of the panel for everything you're tracking
+
+Tracked symbols are stored server-side (like the figure watchlist), so
+they're shared across anyone visiting the dashboard. Format: plain tickers
+like `AAPL` usually resolve; crypto/forex need an exchange prefix, e.g.
+`BINANCE:BTCUSDT`, `FX:EURUSD`, `OANDA:XAUUSD`.
+
+**This still won't tell you when to buy or sell.** The gauge is a reading
+of what standard indicators say *right now* — not a prediction, and not
+personalized. No indicator, gauge, or combination of them reliably calls
+entries/exits; anything that claimed otherwise would be selling you false
+confidence with real money on the line.
+
 ## What this actually does — and doesn't
 
 **News:** direct RSS from CNBC, MarketWatch, Yahoo Finance, Investing.com,

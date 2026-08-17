@@ -131,6 +131,25 @@ app.get('/api/alerts', (req, res) => {
   res.json({ alerts: db.getAlerts(Number(req.query.limit) || 50) });
 });
 
+// ---- TradingView any-symbol tracker ----
+// Free-form symbol list (stocks on any exchange, crypto, forex, indices,
+// futures — whatever TradingView's own widgets resolve). No price/indicator
+// computation happens on this server for these — the frontend embeds
+// TradingView's own chart + Technical Analysis widgets directly, so this
+// endpoint just persists which symbols to show, shared across visitors like
+// the figure watchlist.
+app.get('/api/tv-symbols', (req, res) => {
+  res.json({ symbols: db.getTvSymbols() });
+});
+
+app.post('/api/tv-symbols', (req, res) => {
+  const { symbols } = req.body || {};
+  if (!Array.isArray(symbols)) return res.status(400).json({ ok: false, reason: 'symbols must be an array' });
+  const cleaned = [...new Set(symbols.map((s) => String(s).trim().toUpperCase()).filter(Boolean))].slice(0, 30);
+  db.setTvSymbols(cleaned);
+  res.json({ ok: true, symbols: cleaned });
+});
+
 // Video search — best-effort candidates only, never presented as a
 // confirmed match to a specific statement. See lib/youtube.js.
 app.get('/api/video-search', async (req, res) => {

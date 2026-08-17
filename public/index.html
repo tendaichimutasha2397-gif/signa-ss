@@ -139,6 +139,14 @@
   .alert-main .alert-note{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-top:3px;line-height:1.4;max-width:520px;}
   .alert-time{font-family:var(--mono);font-size:10.5px;color:var(--dim);white-space:nowrap;}
 
+  /* TradingView any-symbol tracker */
+  .tv-ticker-box .tradingview-widget-container{height:46px;}
+  .tv-symbol-box .tradingview-widget-container{min-height:70px;}
+  .tv-chart-box .tradingview-widget-container{height:480px;}
+  .tv-ta-box .tradingview-widget-container{height:420px;}
+  .widget-box{border-radius:6px;overflow:hidden;background:var(--surface2);border:1px solid var(--line);}
+  .chip.active{border-color:var(--mint);color:var(--mint);background:rgba(70,216,174,0.08);}
+
   footer{max-width:1040px;margin:30px auto 0;padding:0 20px;color:var(--dim);font-size:11.5px;font-family:var(--mono);line-height:1.6;}
   @media (max-width:600px){ h1{font-size:21px;} }
 </style>
@@ -157,7 +165,7 @@
     <h1>Market <span>Pulse</span></h1>
     <p class="sub">Pulls stock and crypto coverage from major outlets (via direct RSS + Google News aggregation) and, when configured, live X posts — then spotlights anything from your tracked figures, with video where it genuinely exists.</p>
     <div class="disclaimer">
-      <b>Read this first.</b> Not financial advice, not a guarantee of completeness, and nothing here is a buy/sell recommendation. It can't tap into live TV broadcast audio — no consumer-accessible API exists for that. X posts show their real embedded video straight from X's own widget when a tracked account's post has one. The "Find video" button on any card searches YouTube for <i>possible</i> related clips — those are unverified candidates for you to check, never a confirmed match. The ⚡ "mover" flag is keyword-based, not sentiment analysis. The price panel below shows standard technical indicators (RSI, moving averages, MACD, volume) computed from delayed public data — these describe what price already did, they don't predict what it will do next, and no combination of them is "accurate" at calling entries/exits. Nothing in this app places trades or connects to MetaTrader or any broker.
+      <b>Read this first.</b> Not financial advice, not a guarantee of completeness, and nothing here is a buy/sell recommendation. It can't tap into live TV broadcast audio — no consumer-accessible API exists for that. X posts show their real embedded video straight from X's own widget when a tracked account's post has one. The "Find video" button on any card searches YouTube for <i>possible</i> related clips — those are unverified candidates for you to check, never a confirmed match. The ⚡ "mover" flag is keyword-based, not sentiment analysis. The price panel shows standard technical indicators computed from delayed public data. The "Any-symbol tracker" below embeds TradingView's own live charts and their own Technical Analysis gauge (a mechanical average of standard indicators) for whatever symbol you add — that gauge is TradingView's, not this app's, and like every indicator it describes what already happened, not what happens next. Nothing in this app places trades or connects to MetaTrader or any broker.
     </div>
   </header>
 
@@ -180,6 +188,24 @@
       <span class="status" id="alertsStatus"></span>
     </div>
     <div id="alertsList"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <span>Any-symbol tracker (TradingView) — stocks, crypto, forex, indices, futures</span>
+    </div>
+    <div class="tv-ticker-box"><div class="tradingview-widget-container" id="tvTickerTape"></div></div>
+    <div class="chip-row" id="tvChips" style="margin-top:12px;"></div>
+    <div class="add-figure">
+      <input type="text" id="tvSymbolInput" placeholder="e.g. AAPL, NASDAQ:TSLA, BINANCE:BTCUSDT, FX:EURUSD, OANDA:XAUUSD">
+      <button class="action" id="addTvSymbolBtn">Track</button>
+    </div>
+    <div class="status" style="margin-top:8px;line-height:1.6;">Plain tickers like <code>AAPL</code> usually resolve. For crypto/forex, prefix the exchange: <code>BINANCE:BTCUSDT</code>, <code>FX:EURUSD</code>, <code>OANDA:XAUUSD</code>.</div>
+    <div class="tv-symbol-box" style="margin-top:12px;"><div class="tradingview-widget-container" id="tvSymbolInfo"></div></div>
+    <div class="grid-2" style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:12px;">
+      <div class="widget-box tv-chart-box"><div class="tradingview-widget-container" id="tvChart"></div></div>
+      <div class="widget-box tv-ta-box"><div class="tradingview-widget-container" id="tvTa"></div></div>
+    </div>
   </div>
 
   <div class="panel">
@@ -591,11 +617,101 @@ async function loadAlerts(){
   renderAlerts();
 }
 
+// ---- TradingView any-symbol tracker (stocks/crypto/forex/indices/futures) ----
+let tvSymbols = [];
+let tvActive = null;
+
+function mountTvWidget(containerId, src, config){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = src;
+  script.async = true;
+  script.innerHTML = JSON.stringify(config);
+  el.appendChild(script);
+}
+
+function mountTvTickerTape(){
+  mountTvWidget('tvTickerTape', 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js', {
+    symbols: tvSymbols.map(s => ({ proName: s, title: s.includes(':') ? s.split(':')[1] : s })),
+    showSymbolLogo: true, colorTheme: 'dark', isTransparent: true, displayMode: 'compact', locale: 'en',
+  });
+}
+
+function renderTvChips(){
+  const wrap = document.getElementById('tvChips');
+  wrap.innerHTML = tvSymbols.map(s => `
+    <div class="chip ${s===tvActive?'active':''}" data-sym="${s}">
+      <span>${s}</span><button data-remove="${s}" title="Untrack">×</button>
+    </div>`).join('') || '<span class="status">No symbols tracked yet — add one below.</span>';
+  wrap.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', (e)=>{ if(e.target.closest('button')) return; selectTvSymbol(chip.dataset.sym); });
+  });
+  wrap.querySelectorAll('button[data-remove]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); removeTvSymbol(btn.dataset.remove); });
+  });
+}
+
+function selectTvSymbol(sym){
+  tvActive = sym;
+  renderTvChips();
+  mountTvWidget('tvSymbolInfo', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
+    symbol: sym, colorTheme: 'dark', isTransparent: true, locale: 'en',
+  });
+  mountTvWidget('tvChart', 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js', {
+    symbol: sym, interval: 'D', timezone: 'Etc/UTC', theme: 'dark', style: '1', locale: 'en',
+    enable_publishing: false, allow_symbol_change: false, hide_top_toolbar: false, hide_legend: false,
+    save_image: false, calendar: false, support_host: 'https://www.tradingview.com', autosize: true,
+  });
+  mountTvWidget('tvTa', 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js', {
+    interval: '1D', width: '100%', isTransparent: true, height: '100%', symbol: sym,
+    showIntervalTabs: true, locale: 'en', colorTheme: 'dark',
+  });
+}
+
+async function saveTvSymbols(list){
+  const res = await fetch('/api/tv-symbols', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({symbols:list})});
+  const data = await res.json();
+  if(data.ok) tvSymbols = data.symbols;
+  return data.ok;
+}
+
+async function loadTvSymbols(){
+  const res = await fetch('/api/tv-symbols');
+  const data = await res.json();
+  tvSymbols = data.symbols || [];
+  renderTvChips();
+  mountTvTickerTape();
+  if(tvSymbols.length) selectTvSymbol(tvSymbols[0]);
+}
+
+document.getElementById('addTvSymbolBtn').addEventListener('click', async ()=>{
+  const input = document.getElementById('tvSymbolInput');
+  const sym = input.value.trim().toUpperCase();
+  if(!sym) return;
+  const next = [...new Set([...tvSymbols, sym])];
+  const ok = await saveTvSymbols(next);
+  if(ok){ input.value = ''; renderTvChips(); mountTvTickerTape(); selectTvSymbol(sym); }
+});
+document.getElementById('tvSymbolInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') document.getElementById('addTvSymbolBtn').click(); });
+
+async function removeTvSymbol(sym){
+  const next = tvSymbols.filter(s => s !== sym);
+  const ok = await saveTvSymbols(next);
+  if(!ok) return;
+  mountTvTickerTape();
+  if(tvActive === sym) { tvActive = null; if(tvSymbols.length) selectTvSymbol(tvSymbols[0]); else renderTvChips(); }
+  else renderTvChips();
+}
+
 (async function init(){
   await loadConfig();
   await loadFeed();
   await loadPrices();
   await loadAlerts();
+  await loadTvSymbols();
   connectStream();
 })();
 </script>
