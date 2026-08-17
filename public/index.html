@@ -151,6 +151,25 @@
   .pc-conf-dot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--line);}
   .pc-conf-dot.up{background:#46D8AE;}
   .pc-conf-dot.down{background:#E5544B;}
+  .pc-actions{display:flex;gap:6px;margin-top:9px;}
+  .pc-mini-btn{flex:1;font-family:var(--mono);font-size:10.5px;padding:5px 6px;border:1px solid var(--line);border-radius:5px;background:transparent;color:var(--dim);cursor:pointer;}
+  .pc-mini-btn:hover{color:var(--fg);border-color:var(--fg);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-box{background:var(--bg);border:1px solid var(--line);border-radius:10px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;padding:18px;}
+  .modal-box h3{margin:0 0 12px;font-size:14px;}
+  .modal-close{float:right;background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;}
+  .tf-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;}
+  .tf-row:last-child{border-bottom:none;}
+  .tf-note{font-size:10.5px;color:var(--dim);margin-top:10px;line-height:1.4;}
+  .bt-form label{display:block;font-size:11px;color:var(--dim);margin:8px 0 3px;}
+  .bt-form select, .bt-form input{width:100%;padding:6px;background:transparent;border:1px solid var(--line);border-radius:5px;color:var(--fg);font-family:var(--mono);font-size:11.5px;box-sizing:border-box;}
+  .bt-row{display:flex;gap:6px;}
+  .bt-row > *{flex:1;}
+  .bt-submit{margin-top:12px;width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer;font-family:var(--mono);font-size:11.5px;}
+  .bt-submit:hover{border-color:var(--fg);}
+  .bt-result{margin-top:14px;font-family:var(--mono);font-size:11px;}
+  .bt-result .tf-row{border-bottom:none;padding:4px 0;}
+  .bt-caveat{margin-top:10px;font-size:10.5px;color:var(--amber);line-height:1.4;}
 
   /* TradingView any-symbol tracker */
   .tv-ticker-box .tradingview-widget-container{height:46px;}
@@ -559,6 +578,9 @@ function priceCardHtml(entry){
   if(entry.rsi != null) inds.push(`<span class="pc-ind ${entry.rsiZone}">RSI ${entry.rsi} · ${entry.rsiZone}</span>`);
   if(entry.smaTrend && entry.smaTrend !== 'neutral') inds.push(`<span class="pc-ind ${entry.smaTrend}">SMA20/50 ${entry.smaTrend}</span>`);
   if(entry.macdHistogram != null) inds.push(`<span class="pc-ind">MACD hist ${entry.macdHistogram >= 0 ? '+' : ''}${entry.macdHistogram}</span>`);
+  if(entry.bollinger) inds.push(`<span class="pc-ind ${entry.bollinger.position==='at_or_above_upper'?'overbought':entry.bollinger.position==='at_or_below_lower'?'oversold':''}">Bollinger ${entry.bollinger.position==='inside_bands'?'inside bands':entry.bollinger.position==='at_or_above_upper'?'at/above upper':'at/below lower'}</span>`);
+  if(entry.atr14 != null) inds.push(`<span class="pc-ind">ATR(14) ${entry.atr14}</span>`);
+  if(entry.stochastic) inds.push(`<span class="pc-ind ${entry.stochastic.zone==='overbought'?'overbought':entry.stochastic.zone==='oversold'?'oversold':''}">Stoch %K ${entry.stochastic.k} · ${entry.stochastic.zone}</span>`);
   if(entry.volumeSpike && entry.volumeSpike.isSpike) inds.push(`<span class="pc-ind spike">Vol ${entry.volumeSpike.ratio.toFixed(1)}x avg</span>`);
   const conf = confluenceHtml(entry.confluence);
   return `<div class="price-card">
@@ -570,6 +592,10 @@ function priceCardHtml(entry){
     ${sparklineSvg(entry.sparkline)}
     <div class="pc-indicators">${inds.join('') || '<span class="pc-ind">Not enough history yet</span>'}</div>
     ${conf}
+    <div class="pc-actions">
+      <button class="pc-mini-btn" onclick='openTimeframes(${JSON.stringify(entry.symbol)})'>Timeframes</button>
+      <button class="pc-mini-btn" onclick='openBacktest(${JSON.stringify(entry.symbol)})'>Backtest a rule</button>
+    </div>
     <button class="pc-remove" onclick='removeAsset(${JSON.stringify(entry.symbol)})'>Untrack</button>
   </div>`;
 }
@@ -594,6 +620,103 @@ async function loadPrices(){
     }
   }catch(e){
     document.getElementById('pricesStatus').textContent = 'failed to load prices';
+  }
+}
+
+// ---- Modal shell (shared by Timeframes and Backtest panels) ----
+function showModal(innerHtml){
+  closeModal();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modalOverlay';
+  overlay.onclick = (e) => { if(e.target === overlay) closeModal(); };
+  overlay.innerHTML = `<div class="modal-box">${innerHtml}</div>`;
+  document.body.appendChild(overlay);
+}
+function closeModal(){
+  const existing = document.getElementById('modalOverlay');
+  if(existing) existing.remove();
+}
+
+// ---- Multi-timeframe viewer: same confluence counts as the price card,
+// computed independently at 1h/4h/1d. No verdict — just whether the
+// timeframes agree with each other. ----
+async function openTimeframes(symbol){
+  showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h3>${symbol} — timeframe agreement</h3><div id="tfBody">Loading…</div>`);
+  try{
+    const res = await fetch(`/api/multi-timeframe?symbol=${encodeURIComponent(symbol)}`);
+    const data = await res.json();
+    const body = document.getElementById('tfBody');
+    if(!data.ok){ body.innerHTML = `<div class="tf-note">${data.reason}</div>`; return; }
+    const tfKeys = Object.keys(data.timeframes);
+    const rows = tfKeys.map(tf => {
+      const c = data.timeframes[tf];
+      if(!c) return `<div class="tf-row"><span>${tf}</span><span>not enough history</span></div>`;
+      return `<div class="tf-row"><span>${tf}</span><span>${c.up} up · ${c.down} down · ${c.flat} flat</span></div>`;
+    }).join('');
+    const agree = data.trendAgreement ? `<div class="tf-row"><span>Trend across timeframes</span><span>${data.trendAgreement === 'mixed' ? 'mixed / disagree' : data.trendAgreement + ' on all three'}</span></div>` : '';
+    body.innerHTML = `${rows}${agree}<div class="tf-note">${data.note || 'Reading counts per timeframe — not a signal. Timeframes disagreeing is normal and doesn\'t mean one of them is "wrong."'}</div>`;
+  }catch(e){
+    document.getElementById('tfBody').innerHTML = '<div class="tf-note">Failed to load.</div>';
+  }
+}
+
+// ---- Backtest: the user writes the rule; this reports historical
+// frequency only. No pre-filled "good" rule, no recommendation of which
+// metric/operator to pick. ----
+let rulesMeta = null;
+async function loadRulesMeta(){
+  if(rulesMeta) return rulesMeta;
+  const res = await fetch('/api/rules-metadata');
+  rulesMeta = await res.json();
+  return rulesMeta;
+}
+
+async function openBacktest(symbol){
+  const meta = await loadRulesMeta();
+  const metricOpts = meta.metrics.map(m => `<option value="${m}">${m}</option>`).join('');
+  const opOpts = meta.operators.map(o => `<option value="${o}">${o}</option>`).join('');
+  showModal(`<button class="modal-close" onclick="closeModal()">&times;</button>
+    <h3>${symbol} — backtest your own rule</h3>
+    <div class="bt-form">
+      <label>If</label>
+      <div class="bt-row">
+        <select id="btMetric">${metricOpts}</select>
+        <select id="btOperator">${opOpts}</select>
+        <input id="btValue" type="number" step="any" placeholder="value e.g. 30" />
+      </div>
+      <label>...then check price this many days later</label>
+      <input id="btHorizon" type="number" min="1" max="30" value="5" />
+      <button class="bt-submit" onclick='runBacktest(${JSON.stringify(symbol)})'>Run backtest</button>
+    </div>
+    <div id="btResult"></div>`);
+}
+
+async function runBacktest(symbol){
+  const metric = document.getElementById('btMetric').value;
+  const operator = document.getElementById('btOperator').value;
+  const value = document.getElementById('btValue').value;
+  const horizonDays = document.getElementById('btHorizon').value;
+  const resultEl = document.getElementById('btResult');
+  resultEl.innerHTML = '<div class="tf-note">Running…</div>';
+  try{
+    const res = await fetch('/api/backtest', {
+      method: 'POST',
+      headers: {'content-type': 'application/json'},
+      body: JSON.stringify({ symbol, conditions: [{ metric, operator, value }], horizonDays }),
+    });
+    const data = await res.json();
+    if(!data.ok){ resultEl.innerHTML = `<div class="tf-note">${data.reason}</div>`; return; }
+    resultEl.innerHTML = `<div class="bt-result">
+      <div class="tf-row"><span>Historical occurrences</span><span>${data.sampleSize} (of ${data.historyLength} days)</span></div>
+      <div class="tf-row"><span>Up afterward</span><span>${data.up} (${data.upRate ?? '—'}%)</span></div>
+      <div class="tf-row"><span>Down afterward</span><span>${data.down} (${data.downRate ?? '—'}%)</span></div>
+      <div class="tf-row"><span>Flat</span><span>${data.flat}</span></div>
+      <div class="tf-row"><span>Avg % change</span><span>${data.avgPctChange ?? '—'}%</span></div>
+      <div class="bt-caveat">${data.caveat}</div>
+    </div>`;
+  }catch(e){
+    resultEl.innerHTML = '<div class="tf-note">Backtest failed.</div>';
   }
 }
 

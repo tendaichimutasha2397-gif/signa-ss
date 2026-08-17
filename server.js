@@ -8,6 +8,7 @@ const twitter = require('./lib/twitter');
 const youtube = require('./lib/youtube');
 const prices = require('./lib/prices');
 const signals = require('./lib/signals');
+const rules = require('./lib/rules');
 
 const app = express();
 app.use(express.json());
@@ -129,6 +130,39 @@ app.get('/api/asset-history', async (req, res) => {
 
 app.get('/api/alerts', (req, res) => {
   res.json({ alerts: db.getAlerts(Number(req.query.limit) || 50) });
+});
+
+// Multi-timeframe confluence view — same reading counts as /api/prices,
+// computed separately at 1h/4h/1d (crypto) so you can see whether shorter
+// and longer horizons agree. Stocks are daily-only; see lib/prices.js for why.
+app.get('/api/multi-timeframe', async (req, res) => {
+  const { symbol } = req.query;
+  if (!symbol) return res.status(400).json({ ok: false, reason: 'Missing symbol.' });
+  const result = await prices.getMultiTimeframe(String(symbol).toUpperCase());
+  if (!result.ok) return res.status(502).json(result);
+  res.json(result);
+});
+
+// User-defined, backtestable rules. The person supplies the condition(s);
+// this endpoint reports how often that exact condition preceded an up/down
+// move historically. It never suggests a rule and never returns a verdict —
+// see lib/rules.js for the reasoning.
+app.post('/api/backtest', async (req, res) => {
+  const { symbol, conditions, horizonDays } = req.body || {};
+  if (!symbol) return res.status(400).json({ ok: false, reason: 'Missing symbol.' });
+  const hist = await prices.getHistory(String(symbol).toUpperCase());
+  if (!hist.ok) return res.status(502).json(hist);
+  const result = rules.backtestRule({
+    closes: hist.closes,
+    conditions,
+    horizonDays: Number(horizonDays) || 5,
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+app.get('/api/rules-metadata', (req, res) => {
+  res.json({ metrics: rules.METRICS, operators: rules.OPERATORS });
 });
 
 // ---- TradingView any-symbol tracker ----
