@@ -9,6 +9,7 @@ const youtube = require('./lib/youtube');
 const prices = require('./lib/prices');
 const signals = require('./lib/signals');
 const rules = require('./lib/rules');
+const risk = require('./lib/risk');
 
 const app = express();
 app.use(express.json());
@@ -163,6 +164,45 @@ app.post('/api/backtest', async (req, res) => {
 
 app.get('/api/rules-metadata', (req, res) => {
   res.json({ metrics: rules.METRICS, operators: rules.OPERATORS });
+});
+
+// ---- Risk tools ----
+// Pure calculators driven by numbers the caller supplies (their own
+// account size, their own entry/stop/target). These never choose an entry,
+// exit, or hold duration for you — see lib/risk.js for why.
+app.post('/api/risk/position-size', (req, res) => {
+  const { accountSize, riskPct, entryPrice, stopPrice, targetPrice } = req.body || {};
+  const result = risk.positionSize({
+    accountSize: Number(accountSize),
+    riskPct: Number(riskPct),
+    entryPrice: Number(entryPrice),
+    stopPrice: Number(stopPrice),
+    targetPrice: targetPrice != null && targetPrice !== '' ? Number(targetPrice) : undefined,
+  });
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+app.post('/api/risk/atr-stop', async (req, res) => {
+  const { symbol, entryPrice, multiple, direction } = req.body || {};
+  if (!symbol) return res.status(400).json({ ok: false, errors: ['Missing symbol.'] });
+  try {
+    const snapshot = await prices.getSnapshot([String(symbol).toUpperCase()]);
+    const entry = snapshot[String(symbol).toUpperCase()];
+    if (!entry || !entry.ok || entry.atr14 == null) {
+      return res.status(400).json({ ok: false, errors: [`ATR unavailable for ${symbol} right now (needs OHLC history).`] });
+    }
+    const result = risk.atrStopDistance({
+      entryPrice: Number(entryPrice) || entry.price,
+      atr14: entry.atr14,
+      multiple: multiple != null && multiple !== '' ? Number(multiple) : undefined,
+      direction: direction || 'long',
+    });
+    if (!result.ok) return res.status(400).json(result);
+    res.json({ ...result, symbol: String(symbol).toUpperCase(), currentPrice: entry.price });
+  } catch (e) {
+    res.status(500).json({ ok: false, errors: [e.message] });
+  }
 });
 
 // ---- TradingView any-symbol tracker ----

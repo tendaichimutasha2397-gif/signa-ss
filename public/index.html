@@ -93,6 +93,8 @@
   .badge.category-crypto{color:var(--mint);}
   .badge.category-stocks{color:var(--dim);}
   .badge.category-social{color:var(--purple);border-color:rgba(199,146,234,0.4);}
+  .badge.sentiment-positive{color:var(--mint);border-color:rgba(70,216,174,0.4);}
+  .badge.sentiment-negative{color:var(--red);border-color:rgba(229,84,75,0.4);}
   .mover-flag{color:var(--red);font-weight:700;}
   .empty{font-family:var(--mono);font-size:12.5px;color:var(--dim);padding:24px 0;text-align:center;}
 
@@ -171,6 +173,21 @@
   .bt-result .tf-row{border-bottom:none;padding:4px 0;}
   .bt-caveat{margin-top:10px;font-size:10.5px;color:var(--amber);line-height:1.4;}
 
+  /* risk calculator */
+  .risk-tabs{display:flex;gap:8px;margin-bottom:14px;}
+  .risk-tab{background:transparent;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:11.5px;padding:7px 13px;border-radius:6px;cursor:pointer;}
+  .risk-tab.active{background:var(--surface2);color:var(--text);border-color:var(--mint);}
+  .risk-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .risk-form label{display:block;font-size:11px;color:var(--dim);margin-bottom:4px;font-family:var(--mono);}
+  .risk-form input, .risk-form select{width:100%;padding:8px 9px;background:var(--surface2);border:1px solid var(--line);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12.5px;box-sizing:border-box;}
+  .risk-form input:focus, .risk-form select:focus{outline:none;border-color:var(--mint);}
+  .risk-result{margin-top:14px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;}
+  .risk-result .rr-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);}
+  .risk-result .rr-row:last-of-type{border-bottom:none;}
+  .risk-result .rr-row b{color:var(--text);}
+  .risk-note{margin-top:10px;font-size:10.5px;color:var(--amber);line-height:1.5;}
+  .risk-error{margin-top:10px;font-size:11.5px;color:var(--red);font-family:var(--mono);}
+
   /* TradingView any-symbol tracker */
   .tv-ticker-box .tradingview-widget-container{height:46px;}
   .tv-symbol-box .tradingview-widget-container{min-height:70px;}
@@ -197,7 +214,7 @@
     <h1>Market <span>Pulse</span></h1>
     <p class="sub">Pulls stock and crypto coverage from major outlets (via direct RSS + Google News aggregation) and, when configured, live X posts — then spotlights anything from your tracked figures, with video where it genuinely exists.</p>
     <div class="disclaimer">
-      <b>Read this first.</b> Not financial advice, not a guarantee of completeness, and nothing here is a buy/sell recommendation. It can't tap into live TV broadcast audio — no consumer-accessible API exists for that. X posts show their real embedded video straight from X's own widget when a tracked account's post has one. The "Find video" button on any card searches YouTube for <i>possible</i> related clips — those are unverified candidates for you to check, never a confirmed match. The ⚡ "mover" flag is keyword-based, not sentiment analysis. The price panel shows standard technical indicators computed from delayed public data. The "Any-symbol tracker" below embeds TradingView's own live charts and their own Technical Analysis gauge (a mechanical average of standard indicators) for whatever symbol you add — that gauge is TradingView's, not this app's, and like every indicator it describes what already happened, not what happens next. Nothing in this app places trades or connects to MetaTrader or any broker.
+      <b>Read this first.</b> Not financial advice, not a guarantee of completeness, and nothing here is a buy/sell recommendation. It can't tap into live TV broadcast audio — no consumer-accessible API exists for that. X posts show their real embedded video straight from X's own widget when a tracked account's post has one. The "Find video" button on any card searches YouTube for <i>possible</i> related clips — those are unverified candidates for you to check, never a confirmed match. The ⚡ "mover" flag and the ▲/▼ "tone" badge are both keyword-count heuristics, not real sentiment analysis or a signal — they help you triage what to read first, nothing more. The risk calculator below the price panel does sizing math on prices you supply; it never picks an entry, exit, or hold duration for you. The price panel shows standard technical indicators computed from delayed public data. The "Any-symbol tracker" below embeds TradingView's own live charts and their own Technical Analysis gauge (a mechanical average of standard indicators) for whatever symbol you add — that gauge is TradingView's, not this app's, and like every indicator it describes what already happened, not what happens next. Nothing in this app places trades or connects to MetaTrader or any broker.
     </div>
   </header>
 
@@ -220,6 +237,42 @@
       <span class="status" id="alertsStatus"></span>
     </div>
     <div id="alertsList"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <span>Risk calculator — sizing math on a trade you already have in mind</span>
+    </div>
+    <div class="disclaimer" style="margin-bottom:14px;">
+      This calculates numbers from prices <b>you</b> enter. It never picks an entry, exit, stop, target, or how long to hold — no tool can reliably do that. Use it to check "how many units keeps this within my risk tolerance," not to decide whether to take the trade.
+    </div>
+    <div class="risk-tabs">
+      <button class="risk-tab active" data-risktab="size">Position size</button>
+      <button class="risk-tab" data-risktab="atr">ATR stop distance</button>
+    </div>
+
+    <div id="riskSizeForm">
+      <div class="risk-form">
+        <div><label>Account size ($)</label><input type="number" id="rsAccount" placeholder="10000"></div>
+        <div><label>Risk this trade (%)</label><input type="number" id="rsRiskPct" placeholder="1" step="0.1"></div>
+        <div><label>Your entry price</label><input type="number" id="rsEntry" placeholder="0.00" step="any"></div>
+        <div><label>Your stop price</label><input type="number" id="rsStop" placeholder="0.00" step="any"></div>
+        <div><label>Your target price (optional)</label><input type="number" id="rsTarget" placeholder="0.00" step="any"></div>
+      </div>
+      <button class="action" style="margin-top:12px;" id="rsCalcBtn">Calculate</button>
+      <div id="rsResult"></div>
+    </div>
+
+    <div id="riskAtrForm" style="display:none;">
+      <div class="risk-form">
+        <div><label>Symbol (tracked)</label><select id="raSymbol"></select></div>
+        <div><label>Entry price (blank = current)</label><input type="number" id="raEntry" placeholder="current price" step="any"></div>
+        <div><label>ATR multiple</label><input type="number" id="raMultiple" value="2" step="0.1"></div>
+        <div><label>Direction</label><select id="raDirection"><option value="long">Long</option><option value="short">Short</option></select></div>
+      </div>
+      <button class="action" style="margin-top:12px;" id="raCalcBtn">Calculate</button>
+      <div id="raResult"></div>
+    </div>
   </div>
 
   <div class="panel">
@@ -400,6 +453,9 @@ function cardHtml(item){
   const figureBadges = (item.figures||[]).map(f=>`<span class="badge figure">${f}</span>`).join('');
   const assetBadges = (item.assets||[]).slice(0,4).map(a=>`<span class="badge asset">${a}</span>`).join('');
   const moverFlag = item.moverScore >= 2 ? `<span class="mover-flag">⚡ possible market mover</span>` : '';
+  const sentimentBadge = item.sentiment && item.sentiment.tone !== 'neutral'
+    ? `<span class="badge sentiment-${item.sentiment.tone}" title="Keyword-based tone heuristic, not sentiment analysis or a signal">${item.sentiment.tone === 'positive' ? '▲' : '▼'} tone</span>`
+    : '';
   const isTweet = item.category === 'social';
   return `<div class="card ${item.spotlight?'spotlight':''}" data-id="${item.id}">
     <div class="card-top">
@@ -409,7 +465,7 @@ function cardHtml(item){
       <span class="badge category-${item.category}">${item.category}</span>
       <span>${item.source}</span>
       <span>${fmtTime(item.publishedAt)}</span>
-      ${figureBadges}${assetBadges}${moverFlag}
+      ${figureBadges}${assetBadges}${moverFlag}${sentimentBadge}
     </div>
     <div class="card-actions">
       ${isTweet ? `<button onclick='toggleTweetEmbed(this, ${JSON.stringify(item.link)}, ${JSON.stringify(item.id)})'>Show post</button>` : ''}
@@ -616,6 +672,7 @@ async function loadPrices(){
     if(data.ok){
       latestPriceSnapshot = data.snapshot;
       renderPrices();
+      populateRiskAssetSelect();
       document.getElementById('pricesStatus').textContent = `updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
     }
   }catch(e){
@@ -770,6 +827,85 @@ async function loadAlerts(){
   allAlerts = data.alerts || [];
   renderAlerts();
 }
+
+// ---- Risk calculator ----
+document.querySelectorAll('.risk-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.risk-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const isSize = tab.dataset.risktab === 'size';
+    document.getElementById('riskSizeForm').style.display = isSize ? 'block' : 'none';
+    document.getElementById('riskAtrForm').style.display = isSize ? 'none' : 'block';
+  });
+});
+
+function riskRow(label, value){
+  return `<div class="rr-row"><span>${label}</span><b>${value}</b></div>`;
+}
+
+document.getElementById('rsCalcBtn').addEventListener('click', async () => {
+  const body = {
+    accountSize: document.getElementById('rsAccount').value,
+    riskPct: document.getElementById('rsRiskPct').value,
+    entryPrice: document.getElementById('rsEntry').value,
+    stopPrice: document.getElementById('rsStop').value,
+    targetPrice: document.getElementById('rsTarget').value,
+  };
+  const res = await fetch('/api/risk/position-size', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body)});
+  const data = await res.json();
+  const out = document.getElementById('rsResult');
+  if(!data.ok){
+    out.innerHTML = `<div class="risk-error">${(data.errors||['Something went wrong.']).join(' ')}</div>`;
+    return;
+  }
+  out.innerHTML = `<div class="risk-result">
+    ${riskRow('Direction', data.direction)}
+    ${riskRow('Risk per unit', '$' + data.riskPerUnit)}
+    ${riskRow('Dollar risk', '$' + data.dollarRisk)}
+    ${riskRow('Units to buy/sell', data.wholeUnits)}
+    ${riskRow('Position value', '$' + data.positionValue)}
+    ${riskRow('% of account in position', data.accountPctInPosition + '%')}
+    ${data.rewardRiskRatio != null ? riskRow('Reward:risk ratio', data.rewardRiskRatio + ':1') : ''}
+    <div class="risk-note">${data.note}</div>
+  </div>`;
+});
+
+function populateRiskAssetSelect(){
+  const sel = document.getElementById('raSymbol');
+  const prev = sel.value;
+  const symbols = Object.keys(latestPriceSnapshot || {});
+  sel.innerHTML = symbols.map(s => `<option value="${s}">${s}</option>`).join('');
+  if(symbols.includes(prev)) sel.value = prev;
+}
+
+document.getElementById('raCalcBtn').addEventListener('click', async () => {
+  const body = {
+    symbol: document.getElementById('raSymbol').value,
+    entryPrice: document.getElementById('raEntry').value,
+    multiple: document.getElementById('raMultiple').value,
+    direction: document.getElementById('raDirection').value,
+  };
+  if(!body.symbol){
+    document.getElementById('raResult').innerHTML = `<div class="risk-error">Track at least one asset in the price panel above first.</div>`;
+    return;
+  }
+  const res = await fetch('/api/risk/atr-stop', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body)});
+  const data = await res.json();
+  const out = document.getElementById('raResult');
+  if(!data.ok){
+    out.innerHTML = `<div class="risk-error">${(data.errors||['Something went wrong.']).join(' ')}</div>`;
+    return;
+  }
+  out.innerHTML = `<div class="risk-result">
+    ${riskRow('Symbol', data.symbol)}
+    ${riskRow('Current price', '$' + data.currentPrice)}
+    ${riskRow('ATR(14)', data.atr14)}
+    ${riskRow('Multiple', data.multiple + '×')}
+    ${riskRow('Distance', '$' + data.distance)}
+    ${riskRow('Resulting stop price', '$' + data.stopPrice)}
+    <div class="risk-note">${data.note}</div>
+  </div>`;
+});
 
 // ---- TradingView any-symbol tracker (stocks/crypto/forex/indices/futures) ----
 let tvSymbols = [];
