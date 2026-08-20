@@ -223,6 +223,12 @@
       <span>Price &amp; indicators — tracked assets</span>
       <span class="status" id="pricesStatus">—</span>
     </div>
+    <div class="row" style="margin-bottom:10px;">
+      <label class="check">
+        <input type="checkbox" id="strongConfluenceToggle" style="accent-color:var(--mint);">
+        Strong agreement only <span style="opacity:.6;">(most indicators leaning the same way — still just a count, not a call)</span>
+      </label>
+    </div>
     <div id="priceGrid" class="price-grid"></div>
     <div class="add-figure">
       <input type="text" id="assetSymbolInput" placeholder="Add symbol (e.g. AAPL, ETH)" style="max-width:220px;">
@@ -235,6 +241,12 @@
     <div class="panel-title">
       <span>Indicator alerts — fresh crossovers only, not trade calls</span>
       <span class="status" id="alertsStatus"></span>
+    </div>
+    <div class="row" style="margin-bottom:10px;">
+      <label class="check">
+        <input type="checkbox" id="strongAlertsToggle" style="accent-color:var(--mint);">
+        Strong only <span style="opacity:.6;">(filters by the existing severity label — not a new signal)</span>
+      </label>
     </div>
     <div id="alertsList"></div>
   </div>
@@ -657,13 +669,32 @@ function priceCardHtml(entry){
 }
 
 let latestPriceSnapshot = {};
+let strongConfluenceOnly = false;
+
+// "Strong agreement" = a lopsided count where one direction (up/down) leads
+// the other by 3+ readings — still just describing how many indicators
+// currently point the same way, never a verdict about what happens next.
+function isStrongConfluence(entry){
+  const c = entry && entry.confluence;
+  if(!c) return false;
+  return Math.abs(c.up - c.down) >= 3;
+}
+
 function renderPrices(){
   const grid = document.getElementById('priceGrid');
-  const symbols = Object.keys(latestPriceSnapshot);
+  let symbols = Object.keys(latestPriceSnapshot);
+  if(strongConfluenceOnly){
+    symbols = symbols.filter(s => isStrongConfluence(latestPriceSnapshot[s]));
+  }
   grid.innerHTML = symbols.length
     ? symbols.map(s => priceCardHtml(latestPriceSnapshot[s])).join('')
-    : '<div class="empty">No assets tracked yet — add one below.</div>';
+    : `<div class="empty">${strongConfluenceOnly ? 'No tracked assets have strong indicator agreement right now.' : 'No assets tracked yet — add one below.'}</div>`;
 }
+
+document.getElementById('strongConfluenceToggle').addEventListener('change', (e) => {
+  strongConfluenceOnly = e.target.checked;
+  renderPrices();
+});
 
 async function loadPrices(){
   try{
@@ -812,14 +843,25 @@ function alertRowHtml(a){
 }
 
 let allAlerts = [];
+let strongAlertsOnly = false;
 function renderAlerts(){
   const panel = document.getElementById('alertsPanel');
   const list = document.getElementById('alertsList');
   if(!allAlerts.length){ panel.style.display = 'none'; return; }
   panel.style.display = 'block';
-  document.getElementById('alertsStatus').textContent = `${allAlerts.length} recent`;
-  list.innerHTML = allAlerts.slice(0,20).map(alertRowHtml).join('');
+  const visible = strongAlertsOnly ? allAlerts.filter(a => a.severity === 'strong') : allAlerts;
+  document.getElementById('alertsStatus').textContent = strongAlertsOnly
+    ? `${visible.length} strong of ${allAlerts.length} recent`
+    : `${allAlerts.length} recent`;
+  list.innerHTML = visible.length
+    ? visible.slice(0,20).map(alertRowHtml).join('')
+    : '<div class="empty">No strong alerts right now.</div>';
 }
+
+document.getElementById('strongAlertsToggle').addEventListener('change', (e) => {
+  strongAlertsOnly = e.target.checked;
+  renderAlerts();
+});
 
 async function loadAlerts(){
   const res = await fetch('/api/alerts?limit=50');
