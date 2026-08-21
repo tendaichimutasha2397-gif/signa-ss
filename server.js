@@ -10,6 +10,7 @@ const prices = require('./lib/prices');
 const signals = require('./lib/signals');
 const rules = require('./lib/rules');
 const risk = require('./lib/risk');
+const correlation = require('./lib/correlation');
 
 const app = express();
 app.use(express.json());
@@ -149,14 +150,20 @@ app.get('/api/multi-timeframe', async (req, res) => {
 // move historically. It never suggests a rule and never returns a verdict —
 // see lib/rules.js for the reasoning.
 app.post('/api/backtest', async (req, res) => {
-  const { symbol, conditions, horizonDays } = req.body || {};
+  const { symbol, conditions, groups, horizonDays, walkForward, folds } = req.body || {};
   if (!symbol) return res.status(400).json({ ok: false, reason: 'Missing symbol.' });
   const hist = await prices.getHistory(String(symbol).toUpperCase());
   if (!hist.ok) return res.status(502).json(hist);
   const result = rules.backtestRule({
     closes: hist.closes,
+    highs: hist.highs,
+    lows: hist.lows,
+    volumes: hist.volumes,
     conditions,
+    groups,
     horizonDays: Number(horizonDays) || 5,
+    walkForward: walkForward !== false,
+    folds: Number(folds) || 4,
   });
   if (!result.ok) return res.status(400).json(result);
   res.json(result);
@@ -164,6 +171,23 @@ app.post('/api/backtest', async (req, res) => {
 
 app.get('/api/rules-metadata', (req, res) => {
   res.json({ metrics: rules.METRICS, operators: rules.OPERATORS });
+});
+
+// ---- Correlation matrix ----
+// Pearson correlation of daily returns across the currently-tracked asset
+// list. Real, well-defined statistics about historical co-movement — see
+// lib/correlation.js for why this still isn't a forward-looking guarantee.
+app.get('/api/correlation', async (req, res) => {
+  try {
+    const symbols = db.getTrackedAssets();
+    if (symbols.length < 2) return res.status(400).json({ ok: false, reason: 'Track at least 2 assets to compute correlation.' });
+    const closesBySymbol = await prices.getMultiHistory(symbols);
+    if (Object.keys(closesBySymbol).length < 2) return res.status(502).json({ ok: false, reason: 'Not enough price history available right now.' });
+    const result = correlation.buildCorrelationMatrix(closesBySymbol);
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ ok: false, reason: e.message });
+  }
 });
 
 // ---- Risk tools ----

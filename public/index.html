@@ -130,6 +130,26 @@
   .pc-ind.bullish{color:var(--mint);border-color:rgba(70,216,174,0.4);}
   .pc-ind.bearish{color:var(--red);border-color:rgba(229,84,75,0.4);}
   .pc-ind.spike{color:var(--amber);border-color:rgba(232,163,61,0.4);}
+  .pc-ind.strong_trend{color:var(--blue);border-color:rgba(91,157,249,0.4);}
+  .pc-ind.high_volatility{color:var(--amber);border-color:rgba(232,163,61,0.4);}
+  .pc-ind.low_volatility{color:var(--dim);}
+  .panel-note{color:var(--dim);font-size:12px;line-height:1.5;margin:0 0 12px;}
+  .corr-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px;}
+  .corr-table th,.corr-table td{padding:6px 8px;text-align:center;border:1px solid var(--line);}
+  .corr-table th{color:var(--dim);font-weight:500;}
+  .corr-table td.diag{color:var(--dim);}
+  .corr-pairs{display:flex;gap:24px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;}
+  .corr-pairs .grp b{display:block;color:var(--dim);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+  .corr-pairs .grp div{padding:2px 0;}
+  .heatmap-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
+  .heatmap-table th{color:var(--dim);font-weight:500;padding:6px 8px;text-align:left;white-space:nowrap;}
+  .heatmap-table td{padding:0;text-align:center;border:1px solid var(--bg);}
+  .heatmap-cell{display:flex;align-items:center;justify-content:center;height:30px;font-size:14px;cursor:default;}
+  .heatmap-cell.up{background:rgba(70,216,174,0.22);color:var(--mint);}
+  .heatmap-cell.down{background:rgba(229,84,75,0.22);color:var(--red);}
+  .heatmap-cell.flat{background:rgba(139,150,163,0.08);color:var(--dim);}
+  .heatmap-cell.na{background:transparent;color:var(--line);}
+  .heatmap-symbol{font-weight:600;color:var(--text);padding:0 10px;}
   .pc-remove{margin-top:10px;background:none;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:10px;padding:4px 8px;border-radius:5px;cursor:pointer;}
   .pc-remove:hover{border-color:var(--red);color:var(--red);}
   .pc-err-msg{font-family:var(--mono);font-size:10.5px;color:var(--red);margin-top:6px;line-height:1.4;}
@@ -220,6 +240,15 @@
 
   <div class="panel">
     <div class="panel-title">
+      <span>Confluence heatmap — all indicators × tracked assets</span>
+      <span class="status" id="heatmapStatus">—</span>
+    </div>
+    <p class="panel-note">Every indicator's current lean for every tracked asset, at a glance. Green = leaning up, red = leaning down, dim = flat/neutral. This is a visual index into the same reading counts shown on each card below — not a score, not a ranking of which asset is "best," and agreement across a row still isn't a prediction.</p>
+    <div id="heatmapBox"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
       <span>Price &amp; indicators — tracked assets</span>
       <span class="status" id="pricesStatus">—</span>
     </div>
@@ -235,6 +264,15 @@
       <button class="action" id="addAssetBtn">Track</button>
       <span class="status" id="assetHint"></span>
     </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <span>Correlation matrix — tracked assets</span>
+      <span class="status" id="corrStatus">—</span>
+    </div>
+    <p class="panel-note">How closely each pair's daily price moves have tracked each other historically. Useful for spotting real diversification (or the lack of it) — not a prediction that the relationship holds going forward, and correlations tend to rise across the board in risk-off periods.</p>
+    <div id="corrMatrix"></div>
   </div>
 
   <div class="panel" id="alertsPanel" style="display:none;">
@@ -602,6 +640,38 @@ function connectStream(){
 }
 
 // ---- Prices & indicators ----
+// ---- Confluence heatmap: same per-asset `confluence.readings` already
+// used on each price card, laid out as an indicator × asset grid so
+// patterns across the whole tracked list are visible at once. Pure
+// re-presentation of existing data — no new computation, no verdict. ----
+const HEATMAP_INDICATOR_ORDER = ['sma_trend','rsi','macd_histogram','bollinger','stochastic','obv','adx','cci','williams_r','ichimoku'];
+const HEATMAP_LABELS = {
+  sma_trend: 'SMA', rsi: 'RSI', macd_histogram: 'MACD', bollinger: 'Boll',
+  stochastic: 'Stoch', obv: 'OBV', adx: 'ADX', cci: 'CCI', williams_r: 'W%R', ichimoku: 'Ichi',
+};
+const LEAN_GLYPH = { up: '▲', down: '▼', flat: '•' };
+
+function renderHeatmap(){
+  const box = document.getElementById('heatmapBox');
+  const status = document.getElementById('heatmapStatus');
+  const symbols = Object.keys(latestPriceSnapshot).filter(s => latestPriceSnapshot[s] && latestPriceSnapshot[s].ok);
+  if(!symbols.length){ box.innerHTML = '<div class="empty">No tracked assets yet.</div>'; status.textContent=''; return; }
+  const head = HEATMAP_INDICATOR_ORDER.map(k => `<th>${HEATMAP_LABELS[k]}</th>`).join('');
+  const rows = symbols.map(sym => {
+    const entry = latestPriceSnapshot[sym];
+    const byIndicator = {};
+    (entry.confluence?.readings || []).forEach(r => { byIndicator[r.indicator] = r; });
+    const cells = HEATMAP_INDICATOR_ORDER.map(key => {
+      const r = byIndicator[key];
+      if(!r) return `<td><div class="heatmap-cell na">·</div></td>`;
+      return `<td><div class="heatmap-cell ${r.lean}" title="${r.detail}">${LEAN_GLYPH[r.lean]}</div></td>`;
+    }).join('');
+    return `<tr><th class="heatmap-symbol">${sym}</th>${cells}</tr>`;
+  }).join('');
+  box.innerHTML = `<div style="overflow-x:auto;"><table class="heatmap-table"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  status.textContent = `${symbols.length} asset${symbols.length===1?'':'s'}`;
+}
+
 function fmtPrice(v){
   if(v == null) return '—';
   return v >= 1000 ? v.toLocaleString(undefined,{maximumFractionDigits:0}) : v.toLocaleString(undefined,{maximumFractionDigits: v < 10 ? 4 : 2});
@@ -650,6 +720,13 @@ function priceCardHtml(entry){
   if(entry.atr14 != null) inds.push(`<span class="pc-ind">ATR(14) ${entry.atr14}</span>`);
   if(entry.stochastic) inds.push(`<span class="pc-ind ${entry.stochastic.zone==='overbought'?'overbought':entry.stochastic.zone==='oversold'?'oversold':''}">Stoch %K ${entry.stochastic.k} · ${entry.stochastic.zone}</span>`);
   if(entry.volumeSpike && entry.volumeSpike.isSpike) inds.push(`<span class="pc-ind spike">Vol ${entry.volumeSpike.ratio.toFixed(1)}x avg</span>`);
+  if(entry.adx) inds.push(`<span class="pc-ind ${entry.adx.strength}">ADX ${entry.adx.value} · ${entry.adx.strength.replace('_',' ')}</span>`);
+  if(entry.vwap != null) inds.push(`<span class="pc-ind">VWAP(20) $${fmtPrice(entry.vwap)}</span>`);
+  if(entry.obv) inds.push(`<span class="pc-ind">OBV ${entry.obv.trend}</span>`);
+  if(entry.cci != null) inds.push(`<span class="pc-ind ${entry.cci>=100?'overbought':entry.cci<=-100?'oversold':''}">CCI ${entry.cci}</span>`);
+  if(entry.williamsR != null) inds.push(`<span class="pc-ind ${entry.williamsR>=-20?'overbought':entry.williamsR<=-80?'oversold':''}">Williams %R ${entry.williamsR}</span>`);
+  if(entry.ichimoku && entry.ichimoku.position !== 'unknown') inds.push(`<span class="pc-ind ${entry.ichimoku.position==='above_cloud'?'bullish':entry.ichimoku.position==='below_cloud'?'bearish':''}">Ichimoku ${entry.ichimoku.position.replace('_',' ')}</span>`);
+  if(entry.volatilityRegime && entry.volatilityRegime.regime !== 'normal_volatility') inds.push(`<span class="pc-ind ${entry.volatilityRegime.regime}">${entry.volatilityRegime.regime.replace('_',' ')} (${entry.volatilityRegime.percentile}th pct)</span>`);
   const conf = confluenceHtml(entry.confluence);
   return `<div class="price-card">
     <div class="pc-top">
@@ -663,6 +740,7 @@ function priceCardHtml(entry){
     <div class="pc-actions">
       <button class="pc-mini-btn" onclick='openTimeframes(${JSON.stringify(entry.symbol)})'>Timeframes</button>
       <button class="pc-mini-btn" onclick='openBacktest(${JSON.stringify(entry.symbol)})'>Backtest a rule</button>
+      ${entry.fibonacci ? `<button class="pc-mini-btn" onclick='openLevels(${JSON.stringify(entry.symbol)})'>Fib levels</button>` : ''}
     </div>
     <button class="pc-remove" onclick='removeAsset(${JSON.stringify(entry.symbol)})'>Untrack</button>
   </div>`;
@@ -689,6 +767,7 @@ function renderPrices(){
   grid.innerHTML = symbols.length
     ? symbols.map(s => priceCardHtml(latestPriceSnapshot[s])).join('')
     : `<div class="empty">${strongConfluenceOnly ? 'No tracked assets have strong indicator agreement right now.' : 'No assets tracked yet — add one below.'}</div>`;
+  renderHeatmap();
 }
 
 document.getElementById('strongConfluenceToggle').addEventListener('change', (e) => {
@@ -708,6 +787,41 @@ async function loadPrices(){
     }
   }catch(e){
     document.getElementById('pricesStatus').textContent = 'failed to load prices';
+  }
+  loadCorrelation();
+}
+
+// ---- Correlation matrix ----
+function corrColor(v){
+  if(v == null) return 'var(--dim)';
+  if(v >= 0.5) return 'var(--red)';       // strongly co-moving — less diversification benefit
+  if(v <= -0.3) return 'var(--mint)';     // moves opposite — real diversification
+  return 'var(--text)';
+}
+
+async function loadCorrelation(){
+  const statusEl = document.getElementById('corrStatus');
+  const box = document.getElementById('corrMatrix');
+  try{
+    const res = await fetch('/api/correlation');
+    const data = await res.json();
+    if(!data.ok){ box.innerHTML = `<div class="empty">${data.reason}</div>`; statusEl.textContent=''; return; }
+    const { symbols, matrix, mostCorrelated, leastCorrelated } = data;
+    const head = symbols.map(s=>`<th>${s}</th>`).join('');
+    const rows = symbols.map((s,i)=>{
+      const cells = symbols.map((s2,j)=>{
+        const v = matrix[i][j];
+        if(i===j) return `<td class="diag">1.00</td>`;
+        return `<td style="color:${corrColor(v)}">${v==null?'—':v.toFixed(2)}</td>`;
+      }).join('');
+      return `<tr><th>${s}</th>${cells}</tr>`;
+    }).join('');
+    const pairsHtml = (label, pairs) => pairs.length ? `<div class="grp"><b>${label}</b>${pairs.map(p=>`<div>${p.a} / ${p.b}: <span style="color:${corrColor(p.correlation)}">${p.correlation.toFixed(2)}</span></div>`).join('')}</div>` : '';
+    box.innerHTML = `<div style="overflow-x:auto;"><table class="corr-table"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="corr-pairs">${pairsHtml('Most correlated', mostCorrelated)}${pairsHtml('Least / negatively correlated', leastCorrelated)}</div>`;
+    statusEl.textContent = '';
+  }catch(e){
+    box.innerHTML = '<div class="empty">Failed to load correlation matrix.</div>';
   }
 }
 
@@ -749,6 +863,22 @@ async function openTimeframes(symbol){
   }
 }
 
+// ---- Fibonacci retracement levels for the trailing swing high/low ----
+function openLevels(symbol){
+  const entry = latestPriceSnapshot[symbol];
+  const fib = entry && entry.fibonacci;
+  if(!fib){ return; }
+  const rows = fib.levels.map(l => {
+    const near = entry.price != null && Math.abs(entry.price - l.price) / entry.price < 0.005;
+    return `<div class="tf-row${near?'':''}"><span>${(l.ratio*100).toFixed(1)}%</span><span>$${fmtPrice(l.price)}${near ? ' ← price is near here' : ''}</span></div>`;
+  }).join('');
+  showModal(`<button class="modal-close" onclick="closeModal()">&times;</button>
+    <h3>${symbol} — Fibonacci retracement</h3>
+    <div class="tf-row"><span>Swing (trailing ~90 bars)</span><span>$${fmtPrice(fib.swingLow)} – $${fmtPrice(fib.swingHigh)}, ${fib.direction}</span></div>
+    ${rows}
+    <div class="tf-note">Pure arithmetic on the recent price range — a commonly-watched reference grid, not a claim that price respects these levels.</div>`);
+}
+
 // ---- Backtest: the user writes the rule; this reports historical
 // frequency only. No pre-filled "good" rule, no recommendation of which
 // metric/operator to pick. ----
@@ -760,41 +890,64 @@ async function loadRulesMeta(){
   return rulesMeta;
 }
 
-async function openBacktest(symbol){
-  const meta = await loadRulesMeta();
+function btConditionRowHtml(meta){
   const metricOpts = meta.metrics.map(m => `<option value="${m}">${m}</option>`).join('');
   const opOpts = meta.operators.map(o => `<option value="${o}">${o}</option>`).join('');
+  return `<div class="bt-row bt-cond-row">
+    <select class="btMetric">${metricOpts}</select>
+    <select class="btOperator">${opOpts}</select>
+    <input class="btValue" type="number" step="any" placeholder="value e.g. 30" />
+  </div>`;
+}
+
+async function openBacktest(symbol){
+  const meta = await loadRulesMeta();
   showModal(`<button class="modal-close" onclick="closeModal()">&times;</button>
     <h3>${symbol} — backtest your own rule</h3>
     <div class="bt-form">
-      <label>If</label>
-      <div class="bt-row">
-        <select id="btMetric">${metricOpts}</select>
-        <select id="btOperator">${opOpts}</select>
-        <input id="btValue" type="number" step="any" placeholder="value e.g. 30" />
-      </div>
-      <label>...then check price this many days later</label>
+      <label>If ANY of these are true (add more rows for "OR")</label>
+      <div id="btConditions">${btConditionRowHtml(meta)}</div>
+      <button class="pc-mini-btn" type="button" onclick='addBtCondition()'>+ Add OR condition</button>
+      <label style="margin-top:10px;display:block;">...then check price this many days later</label>
       <input id="btHorizon" type="number" min="1" max="30" value="5" />
+      <label class="check" style="margin-top:8px;">
+        <input type="checkbox" id="btWalkForward" checked style="accent-color:var(--mint);">
+        Walk-forward check (split history into periods to check consistency)
+      </label>
       <button class="bt-submit" onclick='runBacktest(${JSON.stringify(symbol)})'>Run backtest</button>
     </div>
     <div id="btResult"></div>`);
 }
 
+async function addBtCondition(){
+  const meta = await loadRulesMeta();
+  document.getElementById('btConditions').insertAdjacentHTML('beforeend', btConditionRowHtml(meta));
+}
+
 async function runBacktest(symbol){
-  const metric = document.getElementById('btMetric').value;
-  const operator = document.getElementById('btOperator').value;
-  const value = document.getElementById('btValue').value;
+  const rows = [...document.querySelectorAll('#btConditions .bt-cond-row')];
+  const groups = rows.map(row => [{
+    metric: row.querySelector('.btMetric').value,
+    operator: row.querySelector('.btOperator').value,
+    value: row.querySelector('.btValue').value,
+  }]);
   const horizonDays = document.getElementById('btHorizon').value;
+  const walkForward = document.getElementById('btWalkForward').checked;
   const resultEl = document.getElementById('btResult');
   resultEl.innerHTML = '<div class="tf-note">Running…</div>';
   try{
     const res = await fetch('/api/backtest', {
       method: 'POST',
       headers: {'content-type': 'application/json'},
-      body: JSON.stringify({ symbol, conditions: [{ metric, operator, value }], horizonDays }),
+      body: JSON.stringify({ symbol, groups, horizonDays, walkForward }),
     });
     const data = await res.json();
     if(!data.ok){ resultEl.innerHTML = `<div class="tf-note">${data.reason}</div>`; return; }
+    const wf = data.walkForward;
+    const wfHtml = wf ? `
+      <div class="tf-note" style="margin-top:10px;font-weight:600;color:var(--text);">Walk-forward check (split into ${wf.folds.length} sequential periods)</div>
+      ${wf.folds.map(f => `<div class="tf-row"><span>Period ${f.fold}</span><span>${f.sampleSize ? `${f.sampleSize} fires · ${f.upRate}% up` : 'no fires'}</span></div>`).join('')}
+      <div class="tf-note">${wf.note}</div>` : '';
     resultEl.innerHTML = `<div class="bt-result">
       <div class="tf-row"><span>Historical occurrences</span><span>${data.sampleSize} (of ${data.historyLength} days)</span></div>
       <div class="tf-row"><span>Up afterward</span><span>${data.up} (${data.upRate ?? '—'}%)</span></div>
@@ -802,6 +955,7 @@ async function runBacktest(symbol){
       <div class="tf-row"><span>Flat</span><span>${data.flat}</span></div>
       <div class="tf-row"><span>Avg % change</span><span>${data.avgPctChange ?? '—'}%</span></div>
       <div class="bt-caveat">${data.caveat}</div>
+      ${wfHtml}
     </div>`;
   }catch(e){
     resultEl.innerHTML = '<div class="tf-note">Backtest failed.</div>';

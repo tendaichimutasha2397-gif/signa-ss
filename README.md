@@ -31,22 +31,56 @@ If you're uploading to GitHub through the browser, drag the whole `lib` and
 them — or GitHub will flatten everything and the app will crash with
 `Cannot find module './lib/db'`.
 
-## Prices & indicators (new)
+## Prices & indicators
 
-The dashboard now shows a live price panel for a tracked list of assets
+The dashboard shows a live price panel for a tracked list of assets
 (default: BTC, ETH, SOL, TSLA, AAPL, NVDA — add/remove any of the symbols
 in `lib/prices.js`'s `ASSET_MAP`). For each one it shows:
 
-- Current price and 24h % change
-- A 30-point sparkline
-- **RSI(14)** and whether it's in overbought/oversold territory
-- **SMA20 / SMA50 trend** (whether the 20-day average is above or below the 50-day)
-- **MACD histogram**
+- Current price and 24h % change, plus a 30-point sparkline
+- **RSI(14)**, **Stochastic %K/%D**, **Williams %R**, **CCI** — four
+  differently-scaled "where does price sit in its recent range" readings
+- **SMA20/SMA50 trend** and **ADX/+DI/-DI** — direction vs. trend *strength*
+  are genuinely different axes; ADX flags whether a trend is even present
+  before direction is worth much
+- **MACD histogram** and **OBV trend** (volume-confirmed momentum)
+- **Bollinger Bands** position and **VWAP(20)** (volume-weighted average price)
+- **Ichimoku Cloud** position (above/inside/below) and Tenkan/Kijun cross
+- **Fibonacci retracement levels** over the trailing swing (via the "Fib
+  levels" button on each card)
+- **ATR(14)** and a **volatility regime** read — is this asset's current
+  ATR unusually high or low versus its own recent history (percentile-based)
 - **Volume spike** flag (current volume vs. its recent average)
+- A **confluence tally** — a transparent count of how many of the above are
+  currently leaning up/down/flat, with every individual reading inspectable
 
 Crypto prices/history come from CoinGecko's free public API (no key
-needed). Stock prices/history come from Stooq's free CSV endpoints (no key
-needed, but **delayed** — not real-time, and not licensed market data).
+needed). Stock prices/history come from Stooq's free CSV endpoints first,
+falling back automatically to Yahoo Finance's public chart endpoint if
+Stooq is unavailable — two independent free sources for resilience. Both
+are **delayed** — not real-time, and not licensed market data.
+
+### Correlation matrix
+
+A panel below the price grid computes the Pearson correlation of daily
+returns across every currently-tracked asset, shown as a full matrix plus
+the most- and least-correlated pairs. This is real statistics about how
+closely assets have moved together — useful for spotting where a "tracked
+list" is actually diversified vs. secretly one bet six times over. It's a
+historical snapshot; correlations shift over time and tend to rise across
+the board in risk-off periods, which the panel says explicitly.
+
+### Backtesting — now with OR logic and walk-forward validation
+
+The per-asset "Backtest a rule" button lets you check any condition (or
+several, OR'd together — add rows for "if RSI < 30 OR Stoch %K < 20") against
+the asset's available history, reporting how often price was up/down/flat
+some number of days later. New: a **walk-forward check** splits that same
+history into sequential time periods and reports the hit-rate independently
+per period, so you can see whether a pattern held up consistently over time
+or was really just one lucky/unlucky stretch driving the headline number.
+Metrics available: RSI, SMA20/50, MACD histogram, Bollinger bands, close,
+Stochastic %K, ADX, +DI/-DI, CCI, Williams %R, OBV.
 
 **"Indicator alerts"** fire (in-app + optional browser notification, same
 toggle as figure alerts) when one of these *changes state* — e.g. RSI just
