@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Market Pulse — Live Stocks &amp; Crypto Watch</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Live-aggregated stock and crypto news with spotlighting for tracked public figures like Trump and Musk, plus video where it exists.">
+<meta name="description" content="Live-aggregated stock and crypto news with spotlighting for tracked public figures, plus price indicators and video lookup.">
 <meta name="theme-color" content="#0B0F14">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B0F14'/%3E%3Cpath d='M8 40l10-14 8 8 12-20 10 12 8-6' fill='none' stroke='%2346D8AE' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +13,8 @@
 <style>
   :root{
     --bg:#0B0F14; --surface:#121824; --surface2:#182131; --line:#242E3B;
-    --text:#E7ECF2; --dim:#8B96A3; --mint:#46D8AE; --amber:#E8A33D; --red:#E5544B; --blue:#5B9DF9; --purple:#c792ea;
+    --text:#E7ECF2; --dim:#8B96A3; --mint:#46D8AE; --amber:#E8A33D; --red:#E5544B;
+    --blue:#5B9DF9; --purple:#c792ea;
     --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
   }
   *{box-sizing:border-box;}
@@ -49,13 +50,10 @@
   .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:20px;box-shadow:0 20px 50px -35px rgba(0,0,0,0.7);}
   .panel-title{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-  .filter-btn{
-    background:transparent;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);
-    font-size:12px;padding:8px 14px;border-radius:20px;cursor:pointer;transition:all .15s;
-  }
+  .filter-btn{background:transparent;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:12px;padding:8px 14px;border-radius:20px;cursor:pointer;transition:all .15s;}
   .filter-btn:hover{border-color:var(--mint);color:var(--text);}
   .filter-btn.active{background:var(--mint);color:#04140F;border-color:var(--mint);font-weight:600;}
-  button.action{background:var(--mint);color:#04140F;border:none;font-family:var(--mono);font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:6px;cursor:pointer;transition:filter .15s, transform .15s;}
+  button.action{background:var(--mint);color:#04140F;border:none;font-family:var(--mono);font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:6px;cursor:pointer;transition:filter .15s,transform .15s;}
   button.action:hover{filter:brightness(1.08);transform:translateY(-1px);}
   button.secondary{background:transparent;border:1px solid var(--line);color:var(--text);font-family:var(--mono);font-size:12.5px;padding:9px 16px;border-radius:6px;cursor:pointer;}
   button.secondary:hover{border-color:var(--mint);}
@@ -63,7 +61,6 @@
   input[type=text]{background:var(--surface2);border:1px solid var(--line);color:var(--text);font-family:var(--mono);font-size:12.5px;padding:9px 11px;border-radius:6px;outline:none;}
   input[type=text]:focus{border-color:var(--mint);}
   label.check{font-family:var(--mono);font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px;cursor:pointer;}
-
   .status{font-family:var(--mono);font-size:11.5px;color:var(--dim);}
 
   /* watchlist chips */
@@ -78,10 +75,9 @@
   #spotlightSection{margin-bottom:24px;}
   .section-head{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
   .section-head span.count{color:var(--text);}
-
   .card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:10px;transition:border-color .15s;}
   .card:hover{border-color:rgba(70,216,174,0.35);}
-  .card.spotlight{border-color:rgba(232,163,61,0.5);background:linear-gradient(180deg, rgba(232,163,61,0.06), var(--surface) 40%);}
+  .card.spotlight{border-color:rgba(232,163,61,0.5);background:linear-gradient(180deg,rgba(232,163,61,0.06),var(--surface) 40%);}
   .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
   .card-title{font-size:14.5px;font-weight:600;line-height:1.4;}
   .card-title a{color:var(--text);}
@@ -112,10 +108,12 @@
   .video-card .vc-title{font-size:11.5px;padding:8px 9px 2px;line-height:1.35;color:var(--text);}
   .video-card .vc-channel{font-size:10px;padding:0 9px 9px;color:var(--dim);font-family:var(--mono);}
 
-  /* price panel */
+  /* price grid */
   .price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;}
   .price-card{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
   .price-card.err{opacity:.6;}
+  .price-card.skeleton{animation:shimmer 1.4s infinite;}
+  @keyframes shimmer{0%{opacity:.4;}50%{opacity:.7;}100%{opacity:.4;}}
   .pc-top{display:flex;justify-content:space-between;align-items:baseline;}
   .pc-symbol{font-family:var(--mono);font-weight:700;font-size:14px;}
   .pc-type{font-family:var(--mono);font-size:9.5px;color:var(--dim);text-transform:uppercase;}
@@ -125,7 +123,9 @@
   .pc-change.down{color:var(--red);}
   .pc-indicators{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;font-family:var(--mono);font-size:10.5px;}
   .pc-ind{border:1px solid var(--line);border-radius:4px;padding:3px 7px;color:var(--dim);}
+  /* overbought = price stretched high = lean DOWN = red */
   .pc-ind.overbought{color:var(--red);border-color:rgba(229,84,75,0.4);}
+  /* oversold = price stretched low = lean UP = mint */
   .pc-ind.oversold{color:var(--mint);border-color:rgba(70,216,174,0.4);}
   .pc-ind.bullish{color:var(--mint);border-color:rgba(70,216,174,0.4);}
   .pc-ind.bearish{color:var(--red);border-color:rgba(229,84,75,0.4);}
@@ -133,7 +133,9 @@
   .pc-ind.strong_trend{color:var(--blue);border-color:rgba(91,157,249,0.4);}
   .pc-ind.high_volatility{color:var(--amber);border-color:rgba(232,163,61,0.4);}
   .pc-ind.low_volatility{color:var(--dim);}
+  .pc-ind.squeeze{color:var(--purple);border-color:rgba(199,146,234,0.4);}
   .panel-note{color:var(--dim);font-size:12px;line-height:1.5;margin:0 0 12px;}
+
   .corr-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px;}
   .corr-table th,.corr-table td{padding:6px 8px;text-align:center;border:1px solid var(--line);}
   .corr-table th{color:var(--dim);font-weight:500;}
@@ -141,6 +143,7 @@
   .corr-pairs{display:flex;gap:24px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;}
   .corr-pairs .grp b{display:block;color:var(--dim);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
   .corr-pairs .grp div{padding:2px 0;}
+
   .heatmap-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
   .heatmap-table th{color:var(--dim);font-weight:500;padding:6px 8px;text-align:left;white-space:nowrap;}
   .heatmap-table td{padding:0;text-align:center;border:1px solid var(--bg);}
@@ -150,6 +153,7 @@
   .heatmap-cell.flat{background:rgba(139,150,163,0.08);color:var(--dim);}
   .heatmap-cell.na{background:transparent;color:var(--line);}
   .heatmap-symbol{font-weight:600;color:var(--text);padding:0 10px;}
+
   .pc-remove{margin-top:10px;background:none;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:10px;padding:4px 8px;border-radius:5px;cursor:pointer;}
   .pc-remove:hover{border-color:var(--red);color:var(--red);}
   .pc-err-msg{font-family:var(--mono);font-size:10.5px;color:var(--red);margin-top:6px;line-height:1.4;}
@@ -164,6 +168,7 @@
   .alert-row.strong .sev-badge{color:#E5544B;border-color:#E5544B;}
   .alert-main .alert-note{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-top:3px;line-height:1.4;max-width:520px;}
   .alert-time{font-family:var(--mono);font-size:10.5px;color:var(--dim);white-space:nowrap;}
+
   .pc-confluence{margin-top:8px;font-size:11px;}
   .pc-confluence summary{cursor:pointer;color:var(--dim);font-family:var(--mono);list-style:none;}
   .pc-confluence summary::-webkit-details-marker{display:none;}
@@ -173,9 +178,11 @@
   .pc-conf-dot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--line);}
   .pc-conf-dot.up{background:#46D8AE;}
   .pc-conf-dot.down{background:#E5544B;}
+
   .pc-actions{display:flex;gap:6px;margin-top:9px;}
   .pc-mini-btn{flex:1;font-family:var(--mono);font-size:10.5px;padding:5px 6px;border:1px solid var(--line);border-radius:5px;background:transparent;color:var(--dim);cursor:pointer;}
-  .pc-mini-btn:hover{color:var(--fg);border-color:var(--fg);}
+  .pc-mini-btn:hover{color:var(--text);border-color:var(--mint);}
+
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
   .modal-box{background:var(--bg);border:1px solid var(--line);border-radius:10px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;padding:18px;}
   .modal-box h3{margin:0 0 12px;font-size:14px;}
@@ -184,13 +191,12 @@
   .tf-row:last-child{border-bottom:none;}
   .tf-note{font-size:10.5px;color:var(--dim);margin-top:10px;line-height:1.4;}
   .bt-form label{display:block;font-size:11px;color:var(--dim);margin:8px 0 3px;}
-  .bt-form select, .bt-form input{width:100%;padding:6px;background:transparent;border:1px solid var(--line);border-radius:5px;color:var(--fg);font-family:var(--mono);font-size:11.5px;box-sizing:border-box;}
+  .bt-form select,.bt-form input{width:100%;padding:6px;background:transparent;border:1px solid var(--line);border-radius:5px;color:var(--text);font-family:var(--mono);font-size:11.5px;box-sizing:border-box;}
   .bt-row{display:flex;gap:6px;}
-  .bt-row > *{flex:1;}
-  .bt-submit{margin-top:12px;width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer;font-family:var(--mono);font-size:11.5px;}
-  .bt-submit:hover{border-color:var(--fg);}
+  .bt-row>*{flex:1;}
+  .bt-submit{margin-top:12px;width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-family:var(--mono);font-size:11.5px;}
+  .bt-submit:hover{border-color:var(--mint);}
   .bt-result{margin-top:14px;font-family:var(--mono);font-size:11px;}
-  .bt-result .tf-row{border-bottom:none;padding:4px 0;}
   .bt-caveat{margin-top:10px;font-size:10.5px;color:var(--amber);line-height:1.4;}
 
   /* risk calculator */
@@ -199,8 +205,8 @@
   .risk-tab.active{background:var(--surface2);color:var(--text);border-color:var(--mint);}
   .risk-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
   .risk-form label{display:block;font-size:11px;color:var(--dim);margin-bottom:4px;font-family:var(--mono);}
-  .risk-form input, .risk-form select{width:100%;padding:8px 9px;background:var(--surface2);border:1px solid var(--line);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12.5px;box-sizing:border-box;}
-  .risk-form input:focus, .risk-form select:focus{outline:none;border-color:var(--mint);}
+  .risk-form input,.risk-form select{width:100%;padding:8px 9px;background:var(--surface2);border:1px solid var(--line);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12.5px;box-sizing:border-box;}
+  .risk-form input:focus,.risk-form select:focus{outline:none;border-color:var(--mint);}
   .risk-result{margin-top:14px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;}
   .risk-result .rr-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);}
   .risk-result .rr-row:last-of-type{border-bottom:none;}
@@ -208,7 +214,7 @@
   .risk-note{margin-top:10px;font-size:10.5px;color:var(--amber);line-height:1.5;}
   .risk-error{margin-top:10px;font-size:11.5px;color:var(--red);font-family:var(--mono);}
 
-  /* TradingView any-symbol tracker */
+  /* TradingView */
   .tv-ticker-box .tradingview-widget-container{height:46px;}
   .tv-symbol-box .tradingview-widget-container{min-height:70px;}
   .tv-chart-box .tradingview-widget-container{height:480px;}
@@ -217,7 +223,7 @@
   .chip.active{border-color:var(--mint);color:var(--mint);background:rgba(70,216,174,0.08);}
 
   footer{max-width:1040px;margin:30px auto 0;padding:0 20px;color:var(--dim);font-size:11.5px;font-family:var(--mono);line-height:1.6;}
-  @media (max-width:600px){ h1{font-size:21px;} }
+  @media (max-width:600px){h1{font-size:21px;}}
 </style>
 </head>
 <body>
@@ -232,9 +238,9 @@
   <header>
     <div class="eyebrow">Live aggregator</div>
     <h1>Market <span>Pulse</span></h1>
-    <p class="sub">Pulls stock and crypto coverage from major outlets (via direct RSS + Google News aggregation) and, when configured, live X posts — then spotlights anything from your tracked figures, with video where it genuinely exists.</p>
+    <p class="sub">Pulls stock and crypto coverage from major outlets via direct RSS + Google News, spotlights anything from tracked figures, and shows standard technical indicators on delayed public price data.</p>
     <div class="disclaimer">
-      <b>Read this first.</b> Not financial advice, not a guarantee of completeness, and nothing here is a buy/sell recommendation. It can't tap into live TV broadcast audio — no consumer-accessible API exists for that. X posts show their real embedded video straight from X's own widget when a tracked account's post has one. The "Find video" button on any card searches YouTube for <i>possible</i> related clips — those are unverified candidates for you to check, never a confirmed match. The ⚡ "mover" flag and the ▲/▼ "tone" badge are both keyword-count heuristics, not real sentiment analysis or a signal — they help you triage what to read first, nothing more. The risk calculator below the price panel does sizing math on prices you supply; it never picks an entry, exit, or hold duration for you. The price panel shows standard technical indicators computed from delayed public data. The "Any-symbol tracker" below embeds TradingView's own live charts and their own Technical Analysis gauge (a mechanical average of standard indicators) for whatever symbol you add — that gauge is TradingView's, not this app's, and like every indicator it describes what already happened, not what happens next. Nothing in this app places trades or connects to MetaTrader or any broker.
+      <b>Read this first.</b> Not financial advice. Nothing here is a buy/sell recommendation. The confluence tally on each price card counts how many indicators lean the same direction — it is a count of lagging descriptive statistics, not a prediction or a signal. RSI/Stochastic/CCI/Williams %R in overbought territory lean <em>down</em> (price stretched high, less room above) — not up. Bollinger band touches are ambiguous and are excluded from directional counts. The "⚡ mover" flag and tone badges are keyword heuristics. The risk calculator does sizing math on prices you supply; it never picks an entry or exit. Prices are delayed — not real-time, not licensed market data. YouTube "Find video" results are unverified candidates. Nothing here places trades or connects to any broker.
     </div>
   </header>
 
@@ -243,7 +249,7 @@
       <span>Confluence heatmap — all indicators × tracked assets</span>
       <span class="status" id="heatmapStatus">—</span>
     </div>
-    <p class="panel-note">Every indicator's current lean for every tracked asset, at a glance. Green = leaning up, red = leaning down, dim = flat/neutral. This is a visual index into the same reading counts shown on each card below — not a score, not a ranking of which asset is "best," and agreement across a row still isn't a prediction.</p>
+    <p class="panel-note">Green = leaning up, red = leaning down, dim = flat/neutral. Same reading counts as each card below — not a score, not a ranking.</p>
     <div id="heatmapBox"></div>
   </div>
 
@@ -255,7 +261,7 @@
     <div class="row" style="margin-bottom:10px;">
       <label class="check">
         <input type="checkbox" id="strongConfluenceToggle" style="accent-color:var(--mint);">
-        Strong agreement only <span style="opacity:.6;">(most indicators leaning the same way — still just a count, not a call)</span>
+        Strong agreement only <span style="opacity:.6;">(≥3 indicators leaning the same way — still a count, not a call)</span>
       </label>
     </div>
     <div id="priceGrid" class="price-grid"></div>
@@ -271,7 +277,7 @@
       <span>Correlation matrix — tracked assets</span>
       <span class="status" id="corrStatus">—</span>
     </div>
-    <p class="panel-note">How closely each pair's daily price moves have tracked each other historically. Useful for spotting real diversification (or the lack of it) — not a prediction that the relationship holds going forward, and correlations tend to rise across the board in risk-off periods.</p>
+    <p class="panel-note">Pearson correlation of daily returns. Useful for spotting real diversification (or the lack of it) — not a forecast. Correlations shift, especially in risk-off periods.</p>
     <div id="corrMatrix"></div>
   </div>
 
@@ -283,7 +289,7 @@
     <div class="row" style="margin-bottom:10px;">
       <label class="check">
         <input type="checkbox" id="strongAlertsToggle" style="accent-color:var(--mint);">
-        Strong only <span style="opacity:.6;">(filters by the existing severity label — not a new signal)</span>
+        Strong only
       </label>
     </div>
     <div id="alertsList"></div>
@@ -294,13 +300,12 @@
       <span>Risk calculator — sizing math on a trade you already have in mind</span>
     </div>
     <div class="disclaimer" style="margin-bottom:14px;">
-      This calculates numbers from prices <b>you</b> enter. It never picks an entry, exit, stop, target, or how long to hold — no tool can reliably do that. Use it to check "how many units keeps this within my risk tolerance," not to decide whether to take the trade.
+      Calculates numbers from prices <b>you</b> enter. Never picks an entry, exit, stop, or target.
     </div>
     <div class="risk-tabs">
       <button class="risk-tab active" data-risktab="size">Position size</button>
       <button class="risk-tab" data-risktab="atr">ATR stop distance</button>
     </div>
-
     <div id="riskSizeForm">
       <div class="risk-form">
         <div><label>Account size ($)</label><input type="number" id="rsAccount" placeholder="10000"></div>
@@ -312,7 +317,6 @@
       <button class="action" style="margin-top:12px;" id="rsCalcBtn">Calculate</button>
       <div id="rsResult"></div>
     </div>
-
     <div id="riskAtrForm" style="display:none;">
       <div class="risk-form">
         <div><label>Symbol (tracked)</label><select id="raSymbol"></select></div>
@@ -332,10 +336,10 @@
     <div class="tv-ticker-box"><div class="tradingview-widget-container" id="tvTickerTape"></div></div>
     <div class="chip-row" id="tvChips" style="margin-top:12px;"></div>
     <div class="add-figure">
-      <input type="text" id="tvSymbolInput" placeholder="e.g. AAPL, NASDAQ:TSLA, BINANCE:BTCUSDT, FX:EURUSD, OANDA:XAUUSD">
+      <input type="text" id="tvSymbolInput" placeholder="e.g. AAPL, NASDAQ:TSLA, BINANCE:BTCUSDT, FX:EURUSD">
       <button class="action" id="addTvSymbolBtn">Track</button>
     </div>
-    <div class="status" style="margin-top:8px;line-height:1.6;">Plain tickers like <code>AAPL</code> usually resolve. For crypto/forex, prefix the exchange: <code>BINANCE:BTCUSDT</code>, <code>FX:EURUSD</code>, <code>OANDA:XAUUSD</code>.</div>
+    <div class="status" style="margin-top:8px;line-height:1.6;">Plain tickers like <code>AAPL</code> usually resolve. Prefix exchange for crypto/forex: <code>BINANCE:BTCUSDT</code>, <code>FX:EURUSD</code>.</div>
     <div class="tv-symbol-box" style="margin-top:12px;"><div class="tradingview-widget-container" id="tvSymbolInfo"></div></div>
     <div class="grid-2" style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:12px;">
       <div class="widget-box tv-chart-box"><div class="tradingview-widget-container" id="tvChart"></div></div>
@@ -351,7 +355,7 @@
     <div class="chip-row" id="watchlistChips"></div>
     <div class="add-figure">
       <input type="text" id="figureNameInput" placeholder="Name (e.g. Jerome Powell)">
-      <input type="text" id="figureAliasInput" placeholder="Match words, comma-separated (e.g. powell, jerome powell)">
+      <input type="text" id="figureAliasInput" placeholder="Match words, comma-separated">
       <button class="action" id="addFigureBtn">Add</button>
     </div>
   </div>
@@ -388,187 +392,267 @@
 </div>
 
 <footer>
-  Sources: CNBC, MarketWatch, Yahoo Finance, Investing.com, Benzinga, CoinDesk, Cointelegraph, Decrypt, The Block, plus Google News aggregation queries. Prices/indicators: CoinGecko (crypto) and Stooq (stocks, delayed). X/Twitter live posts require your own <code>X_BEARER_TOKEN</code>; YouTube video search requires your own <code>YOUTUBE_API_KEY</code> (see README). Every source is best-effort. Re-check anything time-sensitive against the original source before acting on it. This tool does not connect to MetaTrader, any broker, or any exchange, and does not place trades.
+  Sources: CNBC, MarketWatch, Yahoo Finance, Investing.com, Benzinga, CoinDesk, Cointelegraph, Decrypt, The Block, plus Google News aggregation. Prices: CoinGecko (crypto) and Stooq → Yahoo Finance fallback (stocks, delayed). X posts require <code>X_BEARER_TOKEN</code>; YouTube search requires <code>YOUTUBE_API_KEY</code>. Every source is best-effort. Re-check anything time-sensitive at the original source. This tool does not place trades.
 </footer>
 
 <script>
+'use strict';
+
+// -----------------------------------------------------------------------
+// SAFETY: All user-content rendering uses textContent, not innerHTML.
+// Card HTML is constructed with explicit escaping rather than JSON.stringify
+// in onclick attributes (which is an XSS vector when item titles contain
+// single quotes or HTML entities).
+// -----------------------------------------------------------------------
+
 let CONFIG = null;
 let currentFilter = 'all';
-let keywordQuery = '';
+let keywordQuery  = '';
 
-async function loadConfig(){
+// Item registry: maps id -> item for safe retrieval from event handlers
+const itemRegistry = new Map();
+
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function loadConfig() {
   const res = await fetch('/api/config');
   CONFIG = await res.json();
   renderWatchlist();
-  const xNote = CONFIG.twitterEnabled ? 'X live search: on' : 'X live search: off';
-  const ytNote = CONFIG.youtubeEnabled ? 'YouTube search: on' : 'YouTube search: off';
+  const xNote  = CONFIG.twitterEnabled ? 'X: on' : 'X: off';
+  const ytNote = CONFIG.youtubeEnabled ? 'YT: on' : 'YT: off';
   document.getElementById('watchlistStatus').textContent = `${xNote} · ${ytNote}`;
 }
 
-function renderWatchlist(){
+function renderWatchlist() {
   const wrap = document.getElementById('watchlistChips');
-  wrap.innerHTML = CONFIG.watchlist.map((p,i) => `
-    <div class="chip">${p.name}<button data-idx="${i}" title="Remove">×</button></div>
-  `).join('') || '<span class="status">No figures tracked yet — add one below.</span>';
+  if (!CONFIG.watchlist.length) {
+    wrap.innerHTML = '<span class="status">No figures tracked yet.</span>';
+    return;
+  }
+  wrap.innerHTML = CONFIG.watchlist.map((p, i) =>
+    `<div class="chip"><span>${esc(p.name)}</span><button data-idx="${i}" title="Remove" aria-label="Remove ${esc(p.name)}">×</button></div>`
+  ).join('');
   wrap.querySelectorAll('button[data-idx]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const idx = Number(btn.dataset.idx);
-      const updated = CONFIG.watchlist.filter((_,i) => i !== idx);
-      await saveWatchlist(updated);
+      await saveWatchlist(CONFIG.watchlist.filter((_, i) => i !== idx));
     });
   });
 }
 
-async function saveWatchlist(list){
-  const res = await fetch('/api/watchlist', {
-    method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({watchlist:list})
-  });
+async function saveWatchlist(list) {
+  const res  = await fetch('/api/watchlist', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({watchlist:list}) });
   const data = await res.json();
-  if(data.ok){ CONFIG.watchlist = data.watchlist; renderWatchlist(); }
+  if (data.ok) { CONFIG.watchlist = data.watchlist; renderWatchlist(); }
 }
 
 document.getElementById('addFigureBtn').addEventListener('click', async () => {
-  const nameEl = document.getElementById('figureNameInput');
+  const nameEl  = document.getElementById('figureNameInput');
   const aliasEl = document.getElementById('figureAliasInput');
-  const name = nameEl.value.trim();
-  if(!name) return;
-  const aliases = aliasEl.value.trim() ? aliasEl.value.split(',').map(s=>s.trim()).filter(Boolean) : [name.toLowerCase()];
-  await saveWatchlist([...CONFIG.watchlist, {name, aliases}]);
+  const name    = nameEl.value.trim().slice(0, 100);
+  if (!name) return;
+  const aliases = aliasEl.value.trim()
+    ? aliasEl.value.split(',').map(s => s.trim().slice(0,100)).filter(Boolean)
+    : [name.toLowerCase()];
+  await saveWatchlist([...CONFIG.watchlist, { name, aliases }]);
   nameEl.value = ''; aliasEl.value = '';
 });
 
-function fmtTime(iso){
-  const d = new Date(iso);
-  const diffMin = Math.round((Date.now()-d.getTime())/60000);
-  if(diffMin < 1) return 'just now';
-  if(diffMin < 60) return diffMin+'m ago';
-  const diffHr = Math.round(diffMin/60);
-  if(diffHr < 24) return diffHr+'h ago';
+function fmtTime(iso) {
+  const d       = new Date(iso);
+  const diffMin = Math.round((Date.now() - d.getTime()) / 60000);
+  if (diffMin < 1)  return 'just now';
+  if (diffMin < 60) return diffMin + 'm ago';
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24)  return diffHr + 'h ago';
   return d.toLocaleDateString();
 }
 
-// ---- X/Twitter embed (real video, straight from X's own widget) ----
-function toggleTweetEmbed(btn, url, itemId){
+// ---- X/Twitter embed ----
+function toggleTweetEmbed(btn, itemId) {
+  const item = itemRegistry.get(itemId);
+  if (!item) return;
   const card = btn.closest('.card');
   let wrap = card.querySelector('.tweet-embed-wrap');
-  if(wrap){ wrap.remove(); btn.textContent = 'Show post'; return; }
+  if (wrap) { wrap.remove(); btn.textContent = 'Show post'; return; }
   wrap = document.createElement('div');
   wrap.className = 'tweet-embed-wrap';
-  wrap.innerHTML = `<blockquote class="twitter-tweet"><a href="${url}"></a></blockquote>`;
+  const bq  = document.createElement('blockquote');
+  bq.className = 'twitter-tweet';
+  const a  = document.createElement('a');
+  a.href   = item.link;
+  bq.appendChild(a);
+  wrap.appendChild(bq);
   card.querySelector('.card-actions').insertAdjacentElement('afterend', wrap);
   btn.textContent = 'Hide post';
-  if(window.twttr && window.twttr.widgets) window.twttr.widgets.load(wrap);
+  if (window.twttr && window.twttr.widgets) window.twttr.widgets.load(wrap);
 }
 
-// ---- YouTube candidate-video search (unverified — see disclaimer) ----
-async function findVideo(btn, item){
+// ---- YouTube video search ----
+// Tracks pending video search per card to prevent double-firing
+const videoInFlight = new Set();
+
+async function findVideo(btn, itemId) {
+  if (videoInFlight.has(itemId)) return;
+  const item = itemRegistry.get(itemId);
+  if (!item) return;
   const card = btn.closest('.card');
-  let panel = card.querySelector('.video-results');
-  if(panel){ panel.remove(); btn.textContent = '🎥 Find video'; return; }
-
-  if(!CONFIG.youtubeEnabled){
-    alert('YouTube search is not enabled on this server — set YOUTUBE_API_KEY to turn it on. See the README.');
-    return;
-  }
-
+  let panel  = card.querySelector('.video-results');
+  if (panel) { panel.remove(); btn.textContent = '🎥 Find video'; return; }
+  if (!CONFIG.youtubeEnabled) { alert('YOUTUBE_API_KEY not set on the server — see README.'); return; }
+  videoInFlight.add(itemId);
   btn.disabled = true; btn.textContent = 'Searching…';
-  const query = [...(item.figures||[]), item.title].join(' ').slice(0, 100);
-  const publishedAfter = new Date(new Date(item.publishedAt).getTime() - 3*24*60*60*1000).toISOString();
-  try{
-    const res = await fetch(`/api/video-search?q=${encodeURIComponent(query)}&publishedAfter=${encodeURIComponent(publishedAfter)}`);
+  try {
+    const query          = [...(item.figures || []), item.title].join(' ').slice(0, 100);
+    const publishedAfter = new Date(new Date(item.publishedAt).getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const res  = await fetch(`/api/video-search?q=${encodeURIComponent(query)}&publishedAfter=${encodeURIComponent(publishedAfter)}`);
     const data = await res.json();
     panel = document.createElement('div');
     panel.className = 'video-results';
-    if(!data.ok){
-      panel.innerHTML = `<div class="vr-label">Video search failed: ${data.reason || 'unknown error'}</div>`;
-    } else if(!data.items.length){
-      panel.innerHTML = `<div class="vr-label">No candidate videos found for this one.</div>`;
+    if (!data.ok) {
+      const msg = document.createElement('div'); msg.className = 'vr-label';
+      msg.textContent = `Video search failed: ${data.reason || 'unknown error'}`;
+      panel.appendChild(msg);
+    } else if (!data.items.length) {
+      const msg = document.createElement('div'); msg.className = 'vr-label';
+      msg.textContent = 'No candidate videos found for this one.';
+      panel.appendChild(msg);
     } else {
-      panel.innerHTML = `<div class="vr-label">⚠ Possible related videos — not verified matches. Confirm it's actually the right clip before treating it as this statement.</div>
-        <div class="video-grid">${data.items.map(v => `
-          <a class="video-card" href="${v.url}" target="_blank" rel="noopener">
-            <img src="${v.thumbnail || ''}" alt="">
-            <div class="vc-title">${v.title}</div>
-            <div class="vc-channel">${v.channel}</div>
-          </a>`).join('')}</div>`;
+      const label = document.createElement('div'); label.className = 'vr-label';
+      label.textContent = '⚠ Possible related videos — not verified. Confirm it\'s the right clip before treating it as this statement.';
+      panel.appendChild(label);
+      const grid = document.createElement('div'); grid.className = 'video-grid';
+      data.items.forEach(v => {
+        const a = document.createElement('a');
+        a.className = 'video-card'; a.href = v.url; a.target = '_blank'; a.rel = 'noopener';
+        const img = document.createElement('img'); img.src = v.thumbnail || ''; img.alt = '';
+        const title = document.createElement('div'); title.className = 'vc-title'; title.textContent = v.title;
+        const ch = document.createElement('div'); ch.className = 'vc-channel'; ch.textContent = v.channel;
+        a.append(img, title, ch); grid.appendChild(a);
+      });
+      panel.appendChild(grid);
     }
     card.querySelector('.card-actions').insertAdjacentElement('afterend', panel);
     btn.textContent = 'Hide video results';
   } finally {
     btn.disabled = false;
+    videoInFlight.delete(itemId);
   }
 }
 
-function cardHtml(item){
-  const figureBadges = (item.figures||[]).map(f=>`<span class="badge figure">${f}</span>`).join('');
-  const assetBadges = (item.assets||[]).slice(0,4).map(a=>`<span class="badge asset">${a}</span>`).join('');
-  const moverFlag = item.moverScore >= 2 ? `<span class="mover-flag">⚡ possible market mover</span>` : '';
-  const sentimentBadge = item.sentiment && item.sentiment.tone !== 'neutral'
-    ? `<span class="badge sentiment-${item.sentiment.tone}" title="Keyword-based tone heuristic, not sentiment analysis or a signal">${item.sentiment.tone === 'positive' ? '▲' : '▼'} tone</span>`
-    : '';
-  const isTweet = item.category === 'social';
-  return `<div class="card ${item.spotlight?'spotlight':''}" data-id="${item.id}">
-    <div class="card-top">
-      <div class="card-title"><a href="${item.link}" target="_blank" rel="noopener">${item.title}</a></div>
-    </div>
-    <div class="card-meta">
-      <span class="badge category-${item.category}">${item.category}</span>
-      <span>${item.source}</span>
-      <span>${fmtTime(item.publishedAt)}</span>
-      ${figureBadges}${assetBadges}${moverFlag}${sentimentBadge}
-    </div>
-    <div class="card-actions">
-      ${isTweet ? `<button onclick='toggleTweetEmbed(this, ${JSON.stringify(item.link)}, ${JSON.stringify(item.id)})'>Show post</button>` : ''}
-      <button onclick='findVideo(this, ${JSON.stringify(item).replace(/'/g,"&apos;")})'>🎥 Find video</button>
-    </div>
-  </div>`;
+function makeCard(item) {
+  const div = document.createElement('div');
+  div.className = `card${item.spotlight ? ' spotlight' : ''}`;
+  div.dataset.id = item.id;
+
+  // Title row
+  const titleDiv = document.createElement('div'); titleDiv.className = 'card-title';
+  const a = document.createElement('a'); a.href = item.link; a.target = '_blank'; a.rel = 'noopener';
+  a.textContent = item.title;
+  titleDiv.appendChild(a);
+  div.appendChild(titleDiv);
+
+  // Meta row (safe textContent throughout)
+  const meta = document.createElement('div'); meta.className = 'card-meta';
+  const catBadge = document.createElement('span'); catBadge.className = `badge category-${esc(item.category)}`; catBadge.textContent = item.category;
+  const srcSpan  = document.createElement('span'); srcSpan.textContent = item.source;
+  const timeSpan = document.createElement('span'); timeSpan.textContent = fmtTime(item.publishedAt);
+  meta.append(catBadge, srcSpan, timeSpan);
+  (item.figures || []).forEach(f => {
+    const b = document.createElement('span'); b.className = 'badge figure'; b.textContent = f; meta.appendChild(b);
+  });
+  (item.assets || []).slice(0, 4).forEach(a2 => {
+    const b = document.createElement('span'); b.className = 'badge asset'; b.textContent = a2; meta.appendChild(b);
+  });
+  if ((item.moverScore || 0) >= 2) {
+    const m = document.createElement('span'); m.className = 'mover-flag'; m.textContent = '⚡ possible market mover'; meta.appendChild(m);
+  }
+  if (item.sentiment && item.sentiment.tone !== 'neutral') {
+    const s = document.createElement('span');
+    s.className = `badge sentiment-${esc(item.sentiment.tone)}`;
+    s.title = 'Keyword-based tone heuristic';
+    s.textContent = item.sentiment.tone === 'positive' ? '▲ tone' : '▼ tone';
+    meta.appendChild(s);
+  }
+  div.appendChild(meta);
+
+  // Action buttons — use data attributes, not inline onclick with JSON
+  const actions = document.createElement('div'); actions.className = 'card-actions';
+  if (item.category === 'social') {
+    const tweetBtn = document.createElement('button');
+    tweetBtn.textContent = 'Show post';
+    tweetBtn.addEventListener('click', () => toggleTweetEmbed(tweetBtn, item.id));
+    actions.appendChild(tweetBtn);
+  }
+  const videoBtn = document.createElement('button');
+  videoBtn.textContent = '🎥 Find video';
+  videoBtn.addEventListener('click', () => findVideo(videoBtn, item.id));
+  actions.appendChild(videoBtn);
+  div.appendChild(actions);
+
+  return div;
 }
 
-function passesFilter(item, filter){
-  if(filter !== 'all'){
-    if(filter === 'spotlight' && !item.spotlight) return false;
-    if(filter === 'social' && item.category !== 'social') return false;
-    if((filter === 'stocks' || filter === 'crypto') && item.category !== filter) return false;
+function passesFilter(item) {
+  if (currentFilter !== 'all') {
+    if (currentFilter === 'spotlight' && !item.spotlight) return false;
+    if (currentFilter === 'social'    && item.category !== 'social') return false;
+    if ((currentFilter === 'stocks' || currentFilter === 'crypto') && item.category !== currentFilter) return false;
   }
-  if(keywordQuery){
+  if (keywordQuery) {
     const hay = `${item.title} ${item.summary||''} ${(item.figures||[]).join(' ')} ${(item.assets||[]).join(' ')}`.toLowerCase();
-    if(!hay.includes(keywordQuery)) return false;
+    if (!hay.includes(keywordQuery)) return false;
   }
   return true;
 }
 
-function renderFeed(items){
-  const spotlightItems = items.filter(i=>i.spotlight);
-  const spotlightSection = document.getElementById('spotlightSection');
-  const spotlightFeed = document.getElementById('spotlightFeed');
-  if(currentFilter === 'all' && !keywordQuery && spotlightItems.length){
-    spotlightSection.style.display = 'block';
-    spotlightFeed.innerHTML = spotlightItems.slice(0,8).map(cardHtml).join('');
+function renderFeed(items) {
+  // Register all items for safe event-handler retrieval
+  items.forEach(i => itemRegistry.set(i.id, i));
+
+  const spotlightItems = items.filter(i => i.spotlight);
+  const sec  = document.getElementById('spotlightSection');
+  const sfeed = document.getElementById('spotlightFeed');
+  if (currentFilter === 'all' && !keywordQuery && spotlightItems.length) {
+    sec.style.display = 'block';
+    sfeed.innerHTML = '';
+    spotlightItems.slice(0, 8).forEach(i => sfeed.appendChild(makeCard(i)));
     document.getElementById('spotlightCount').textContent = spotlightItems.length;
-    if(window.twttr && window.twttr.widgets) window.twttr.widgets.load(spotlightFeed);
+    if (window.twttr && window.twttr.widgets) window.twttr.widgets.load(sfeed);
   } else {
-    spotlightSection.style.display = 'none';
+    sec.style.display = 'none';
   }
 
   const excludeSpotlighted = currentFilter === 'all' && !keywordQuery;
-  const mainItems = items.filter(i => passesFilter(i, currentFilter) && !(excludeSpotlighted && i.spotlight));
-  const mainFeed = document.getElementById('mainFeed');
+  const mainItems = items.filter(i => passesFilter(i) && !(excludeSpotlighted && i.spotlight));
+  const mfeed = document.getElementById('mainFeed');
   document.getElementById('mainCount').textContent = mainItems.length;
-  mainFeed.innerHTML = mainItems.length ? mainItems.map(cardHtml).join('') : '<div class="empty">No items match this filter yet — try Refresh now, or widen the filter.</div>';
+  mfeed.innerHTML = '';
+  if (mainItems.length) {
+    mainItems.forEach(i => mfeed.appendChild(makeCard(i)));
+  } else {
+    const empty = document.createElement('div'); empty.className = 'empty';
+    empty.textContent = 'No items match this filter yet — try Refresh now, or widen the filter.';
+    mfeed.appendChild(empty);
+  }
 }
 
 let allItems = [];
-async function loadFeed(){
-  const res = await fetch('/api/feed?limit=200');
+async function loadFeed() {
+  const res  = await fetch('/api/feed?limit=200');
   const data = await res.json();
-  allItems = data.items;
+  allItems   = data.items;
   renderFeed(allItems);
   document.getElementById('feedStatus').textContent = `${allItems.length} items · last loaded ${new Date().toLocaleTimeString()}`;
 }
 
-document.querySelectorAll('.filter-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentFilter = btn.dataset.filter;
     renderFeed(allItems);
@@ -576,451 +660,493 @@ document.querySelectorAll('.filter-btn').forEach(btn=>{
 });
 
 let keywordDebounce = null;
-document.getElementById('keywordFilter').addEventListener('input', (e)=>{
+document.getElementById('keywordFilter').addEventListener('input', e => {
   clearTimeout(keywordDebounce);
-  keywordDebounce = setTimeout(()=>{
+  keywordDebounce = setTimeout(() => {
     keywordQuery = e.target.value.trim().toLowerCase();
     renderFeed(allItems);
   }, 250);
 });
 
-document.getElementById('refreshBtn').addEventListener('click', async ()=>{
+// Refresh button with client-side debounce (server also has a lock)
+let refreshCooldown = false;
+document.getElementById('refreshBtn').addEventListener('click', async () => {
+  if (refreshCooldown) return;
+  refreshCooldown = true;
   const btn = document.getElementById('refreshBtn');
   btn.disabled = true; btn.textContent = 'Refreshing…';
-  try{
-    await fetch('/api/refresh', {method:'POST'});
+  try {
+    await fetch('/api/refresh', { method:'POST' });
     await loadFeed();
   } finally {
     btn.disabled = false; btn.textContent = 'Refresh now';
+    setTimeout(() => { refreshCooldown = false; }, 5000);
   }
 });
 
-// ---- browser notifications when a tracked figure shows up ----
 const notifyToggle = document.getElementById('notifyToggle');
-notifyToggle.addEventListener('change', async ()=>{
-  if(notifyToggle.checked && 'Notification' in window && Notification.permission === 'default'){
+notifyToggle.addEventListener('change', async () => {
+  if (notifyToggle.checked && 'Notification' in window && Notification.permission === 'default') {
     const perm = await Notification.requestPermission();
-    if(perm !== 'granted') notifyToggle.checked = false;
+    if (perm !== 'granted') notifyToggle.checked = false;
   }
 });
 
-// ---- live updates via SSE ----
-function connectStream(){
+// ---- SSE ----
+function connectStream() {
   const pill = document.getElementById('connPill');
-  const es = new EventSource('/api/stream');
-  es.addEventListener('connected', ()=>{ pill.textContent = 'live'; pill.className = 'conn-pill on'; });
-  es.addEventListener('items', (e)=>{
+  const es   = new EventSource('/api/stream');
+  es.addEventListener('connected', () => { pill.textContent = 'live'; pill.className = 'conn-pill on'; });
+  es.addEventListener('items', e => {
     const items = JSON.parse(e.data);
-    if(!items.length) return;
+    if (!items.length) return;
     allItems = [...items, ...allItems].slice(0, 400);
     renderFeed(allItems);
     document.getElementById('feedStatus').textContent = `${allItems.length} items · updated ${new Date().toLocaleTimeString()}`;
-    if(notifyToggle.checked && 'Notification' in window && Notification.permission === 'granted'){
-      items.filter(i=>i.spotlight).forEach(i=>{
+    if (notifyToggle.checked && 'Notification' in window && Notification.permission === 'granted') {
+      items.filter(i => i.spotlight).forEach(i => {
         new Notification(`${i.figures.join(', ')}: ${i.title}`, { body: i.source });
       });
     }
   });
-  es.addEventListener('prices', (e)=>{
+  es.addEventListener('prices', e => {
     const data = JSON.parse(e.data);
     latestPriceSnapshot = data.snapshot;
     renderPrices();
     document.getElementById('pricesStatus').textContent = `updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
   });
-  es.addEventListener('alerts', (e)=>{
+  es.addEventListener('alerts', e => {
     const newAlerts = JSON.parse(e.data);
-    if(!newAlerts.length) return;
-    allAlerts = [...newAlerts, ...allAlerts].slice(0,100);
+    if (!newAlerts.length) return;
+    allAlerts = [...newAlerts, ...allAlerts].slice(0, 100);
     renderAlerts();
-    if(notifyToggle.checked && 'Notification' in window && Notification.permission === 'granted'){
+    if (notifyToggle.checked && 'Notification' in window && Notification.permission === 'granted') {
       newAlerts.forEach(a => new Notification(a.label, { body: a.note }));
     }
   });
-  es.onerror = ()=>{ pill.textContent = 'reconnecting…'; pill.className = 'conn-pill off'; };
+  es.onerror = () => { pill.textContent = 'reconnecting…'; pill.className = 'conn-pill off'; };
 }
 
-// ---- Prices & indicators ----
-// ---- Confluence heatmap: same per-asset `confluence.readings` already
-// used on each price card, laid out as an indicator × asset grid so
-// patterns across the whole tracked list are visible at once. Pure
-// re-presentation of existing data — no new computation, no verdict. ----
-const HEATMAP_INDICATOR_ORDER = ['sma_trend','rsi','macd_histogram','bollinger','stochastic','obv','adx','cci','williams_r','ichimoku'];
+// ---- Heatmap ----
+const HEATMAP_INDICATOR_ORDER = ['sma_trend','rsi','macd_histogram','bollinger','stochastic','obv','adx','cci','williams_r','ichimoku','vwap'];
 const HEATMAP_LABELS = {
-  sma_trend: 'SMA', rsi: 'RSI', macd_histogram: 'MACD', bollinger: 'Boll',
-  stochastic: 'Stoch', obv: 'OBV', adx: 'ADX', cci: 'CCI', williams_r: 'W%R', ichimoku: 'Ichi',
+  sma_trend:'SMA', rsi:'RSI', macd_histogram:'MACD', bollinger:'Boll',
+  stochastic:'Stoch', obv:'OBV', adx:'ADX', cci:'CCI', williams_r:'W%R', ichimoku:'Ichi', vwap:'VWAP',
 };
-const LEAN_GLYPH = { up: '▲', down: '▼', flat: '•' };
+const LEAN_GLYPH = { up:'▲', down:'▼', flat:'•' };
 
-function renderHeatmap(){
-  const box = document.getElementById('heatmapBox');
+function renderHeatmap() {
+  const box    = document.getElementById('heatmapBox');
   const status = document.getElementById('heatmapStatus');
-  const symbols = Object.keys(latestPriceSnapshot).filter(s => latestPriceSnapshot[s] && latestPriceSnapshot[s].ok);
-  if(!symbols.length){ box.innerHTML = '<div class="empty">No tracked assets yet.</div>'; status.textContent=''; return; }
+  const symbols = Object.keys(latestPriceSnapshot).filter(s => latestPriceSnapshot[s]?.ok);
+  if (!symbols.length) { box.innerHTML = '<div class="empty">No tracked assets yet.</div>'; status.textContent = ''; return; }
   const head = HEATMAP_INDICATOR_ORDER.map(k => `<th>${HEATMAP_LABELS[k]}</th>`).join('');
   const rows = symbols.map(sym => {
     const entry = latestPriceSnapshot[sym];
-    const byIndicator = {};
-    (entry.confluence?.readings || []).forEach(r => { byIndicator[r.indicator] = r; });
+    const byInd = {};
+    (entry.confluence?.readings || []).forEach(r => { byInd[r.indicator] = r; });
     const cells = HEATMAP_INDICATOR_ORDER.map(key => {
-      const r = byIndicator[key];
-      if(!r) return `<td><div class="heatmap-cell na">·</div></td>`;
-      return `<td><div class="heatmap-cell ${r.lean}" title="${r.detail}">${LEAN_GLYPH[r.lean]}</div></td>`;
+      const r = byInd[key];
+      if (!r) return `<td><div class="heatmap-cell na">·</div></td>`;
+      return `<td><div class="heatmap-cell ${r.lean}" title="${esc(r.detail)}">${LEAN_GLYPH[r.lean]}</div></td>`;
     }).join('');
-    return `<tr><th class="heatmap-symbol">${sym}</th>${cells}</tr>`;
+    return `<tr><th class="heatmap-symbol">${esc(sym)}</th>${cells}</tr>`;
   }).join('');
   box.innerHTML = `<div style="overflow-x:auto;"><table class="heatmap-table"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
-  status.textContent = `${symbols.length} asset${symbols.length===1?'':'s'}`;
+  status.textContent = `${symbols.length} asset${symbols.length === 1 ? '' : 's'}`;
 }
 
-function fmtPrice(v){
-  if(v == null) return '—';
-  return v >= 1000 ? v.toLocaleString(undefined,{maximumFractionDigits:0}) : v.toLocaleString(undefined,{maximumFractionDigits: v < 10 ? 4 : 2});
+function fmtPrice(v) {
+  if (v == null) return '—';
+  return v >= 1000
+    ? v.toLocaleString(undefined, { maximumFractionDigits: 0 })
+    : v.toLocaleString(undefined, { maximumFractionDigits: v < 10 ? 4 : 2 });
 }
 
-function sparklineSvg(points){
-  if(!points || points.length < 2) return '';
+// Sparkline: null-safe, skips nulls in the series
+function sparklineSvg(points) {
+  const clean = (points || []).filter(v => v != null);
+  if (clean.length < 2) return '';
   const w = 200, h = 32, pad = 2;
-  const min = Math.min(...points), max = Math.max(...points);
+  const min   = Math.min(...clean);
+  const max   = Math.max(...clean);
   const range = (max - min) || 1;
-  const step = (w - pad*2) / (points.length - 1);
-  const pts = points.map((p,i) => `${(pad + i*step).toFixed(1)},${(h - pad - ((p-min)/range)*(h-pad*2)).toFixed(1)}`).join(' ');
-  const up = points[points.length-1] >= points[0];
-  return `<svg class="sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${up?'#46D8AE':'#E5544B'}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+  const step  = (w - pad * 2) / (clean.length - 1);
+  const pts   = clean.map((p, i) =>
+    `${(pad + i * step).toFixed(1)},${(h - pad - ((p - min) / range) * (h - pad * 2)).toFixed(1)}`
+  ).join(' ');
+  const up = clean[clean.length - 1] >= clean[0];
+  return `<svg class="sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${up ? '#46D8AE' : '#E5544B'}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 }
 
-// Renders the raw indicator tally — how many of the tracked indicators are
-// leaning up/down/flat right now, plus each individual reading. This is a
-// count, not a conclusion: it deliberately has no buy/sell/long/short label,
-// because agreement across a handful of lagging indicators still isn't a
-// prediction of what price does next.
-function confluenceHtml(c){
-  if(!c || !c.total) return '';
-  const rows = c.readings.map(r => `<div class="pc-conf-row"><span class="pc-conf-dot ${r.lean}"></span><span>${r.detail}</span></div>`).join('');
+function confluenceHtml(c) {
+  if (!c || !c.total) return '';
+  const rows = c.readings.map(r =>
+    `<div class="pc-conf-row"><span class="pc-conf-dot ${r.lean}"></span><span>${esc(r.detail)}</span></div>`
+  ).join('');
   return `<details class="pc-confluence">
-    <summary>${c.up} up · ${c.down} down · ${c.flat} flat <span class="pc-conf-hint">(reading counts, not a signal)</span></summary>
+    <summary>${c.up} up · ${c.down} down · ${c.flat} flat <span class="pc-conf-hint">(count, not a signal)</span></summary>
     <div class="pc-conf-detail">${rows}</div>
   </details>`;
 }
 
-function priceCardHtml(entry){
-  if(!entry || !entry.ok){
+function priceCardHtml(entry) {
+  if (!entry || !entry.ok) {
     return `<div class="price-card err">
-      <div class="pc-top"><span class="pc-symbol">${entry?.symbol||'?'}</span></div>
-      <div class="pc-err-msg">${entry?.reason || 'Unavailable right now.'}</div>
-      <button class="pc-remove" onclick='removeAsset(${JSON.stringify(entry?.symbol)})'>Untrack</button>
+      <div class="pc-top"><span class="pc-symbol">${esc(entry?.symbol || '?')}</span></div>
+      <div class="pc-err-msg">${esc(entry?.reason || 'Unavailable right now.')}</div>
+      <button class="pc-remove" data-remove="${esc(entry?.symbol)}">Untrack</button>
     </div>`;
   }
   const changeClass = entry.change24h == null ? '' : (entry.change24h >= 0 ? 'up' : 'down');
-  const changeStr = entry.change24h == null ? '' : `<span class="pc-change ${changeClass}">${entry.change24h >= 0 ? '+' : ''}${entry.change24h.toFixed(2)}%</span>`;
+  const changeStr   = entry.change24h == null ? '' : `<span class="pc-change ${changeClass}">${entry.change24h >= 0 ? '+' : ''}${entry.change24h.toFixed(2)}%</span>`;
+
   const inds = [];
-  if(entry.rsi != null) inds.push(`<span class="pc-ind ${entry.rsiZone}">RSI ${entry.rsi} · ${entry.rsiZone}</span>`);
-  if(entry.smaTrend && entry.smaTrend !== 'neutral') inds.push(`<span class="pc-ind ${entry.smaTrend}">SMA20/50 ${entry.smaTrend}</span>`);
-  if(entry.macdHistogram != null) inds.push(`<span class="pc-ind">MACD hist ${entry.macdHistogram >= 0 ? '+' : ''}${entry.macdHistogram}</span>`);
-  if(entry.bollinger) inds.push(`<span class="pc-ind ${entry.bollinger.position==='at_or_above_upper'?'overbought':entry.bollinger.position==='at_or_below_lower'?'oversold':''}">Bollinger ${entry.bollinger.position==='inside_bands'?'inside bands':entry.bollinger.position==='at_or_above_upper'?'at/above upper':'at/below lower'}</span>`);
-  if(entry.atr14 != null) inds.push(`<span class="pc-ind">ATR(14) ${entry.atr14}</span>`);
-  if(entry.stochastic) inds.push(`<span class="pc-ind ${entry.stochastic.zone==='overbought'?'overbought':entry.stochastic.zone==='oversold'?'oversold':''}">Stoch %K ${entry.stochastic.k} · ${entry.stochastic.zone}</span>`);
-  if(entry.volumeSpike && entry.volumeSpike.isSpike) inds.push(`<span class="pc-ind spike">Vol ${entry.volumeSpike.ratio.toFixed(1)}x avg</span>`);
-  if(entry.adx) inds.push(`<span class="pc-ind ${entry.adx.strength}">ADX ${entry.adx.value} · ${entry.adx.strength.replace('_',' ')}</span>`);
-  if(entry.vwap != null) inds.push(`<span class="pc-ind">VWAP(20) $${fmtPrice(entry.vwap)}</span>`);
-  if(entry.obv) inds.push(`<span class="pc-ind">OBV ${entry.obv.trend}</span>`);
-  if(entry.cci != null) inds.push(`<span class="pc-ind ${entry.cci>=100?'overbought':entry.cci<=-100?'oversold':''}">CCI ${entry.cci}</span>`);
-  if(entry.williamsR != null) inds.push(`<span class="pc-ind ${entry.williamsR>=-20?'overbought':entry.williamsR<=-80?'oversold':''}">Williams %R ${entry.williamsR}</span>`);
-  if(entry.ichimoku && entry.ichimoku.position !== 'unknown') inds.push(`<span class="pc-ind ${entry.ichimoku.position==='above_cloud'?'bullish':entry.ichimoku.position==='below_cloud'?'bearish':''}">Ichimoku ${entry.ichimoku.position.replace('_',' ')}</span>`);
-  if(entry.volatilityRegime && entry.volatilityRegime.regime !== 'normal_volatility') inds.push(`<span class="pc-ind ${entry.volatilityRegime.regime}">${entry.volatilityRegime.regime.replace('_',' ')} (${entry.volatilityRegime.percentile}th pct)</span>`);
-  const conf = confluenceHtml(entry.confluence);
+  if (entry.rsi != null) inds.push(`<span class="pc-ind ${entry.rsiZone}">RSI ${entry.rsi} · ${entry.rsiZone}</span>`);
+  if (entry.smaTrend && entry.smaTrend !== 'neutral') inds.push(`<span class="pc-ind ${entry.smaTrend}">SMA20/50 ${entry.smaTrend}</span>`);
+  if (entry.macdHistogram != null) inds.push(`<span class="pc-ind">MACD ${entry.macdHistogram >= 0 ? '+' : ''}${entry.macdHistogram}</span>`);
+  if (entry.bollinger) {
+    // Corrected label: at/above upper = mean-reversion pressure, lean down
+    const pos = entry.bollinger.position;
+    const cls = pos === 'at_or_above_upper' ? 'overbought' : pos === 'at_or_below_lower' ? 'oversold' : '';
+    inds.push(`<span class="pc-ind ${cls}">Boll ${pos === 'inside_bands' ? 'inside' : pos === 'at_or_above_upper' ? 'at upper' : 'at lower'}</span>`);
+    if (entry.bollinger.squeeze) inds.push(`<span class="pc-ind squeeze">Squeeze</span>`);
+  }
+  if (entry.atr14 != null) inds.push(`<span class="pc-ind">ATR(14) ${entry.atr14}</span>`);
+  if (entry.stochastic) {
+    const z = entry.stochastic.zone;
+    inds.push(`<span class="pc-ind ${z === 'overbought' ? 'overbought' : z === 'oversold' ? 'oversold' : ''}">Stoch %K ${entry.stochastic.k} · ${z}</span>`);
+  }
+  if (entry.volumeSpike?.isSpike) inds.push(`<span class="pc-ind spike">Vol ${entry.volumeSpike.ratio?.toFixed(1)}x avg</span>`);
+  if (entry.adx) inds.push(`<span class="pc-ind ${entry.adx.strength}">ADX ${entry.adx.value} · ${entry.adx.strength.replace('_',' ')}</span>`);
+  if (entry.vwap != null) inds.push(`<span class="pc-ind">VWAP(20) $${fmtPrice(entry.vwap)}</span>`);
+  if (entry.obv) inds.push(`<span class="pc-ind">OBV ${entry.obv.trend}</span>`);
+  if (entry.cci != null) inds.push(`<span class="pc-ind ${entry.cci >= 100 ? 'overbought' : entry.cci <= -100 ? 'oversold' : ''}">CCI ${entry.cci}</span>`);
+  if (entry.williamsR != null) inds.push(`<span class="pc-ind ${entry.williamsR >= -20 ? 'overbought' : entry.williamsR <= -80 ? 'oversold' : ''}">W%R ${entry.williamsR}</span>`);
+  if (entry.ichimoku?.position !== 'unknown') inds.push(`<span class="pc-ind ${entry.ichimoku.position === 'above_cloud' ? 'bullish' : entry.ichimoku.position === 'below_cloud' ? 'bearish' : ''}">Ichi ${entry.ichimoku.position.replace(/_/g,' ')}</span>`);
+  if (entry.volatilityRegime?.regime !== 'normal_volatility') inds.push(`<span class="pc-ind ${entry.volatilityRegime.regime}">${entry.volatilityRegime.regime.replace(/_/g,' ')} (${entry.volatilityRegime.percentile}th pct)</span>`);
+
+  const fibBtn = entry.fibonacci ? `<button class="pc-mini-btn" data-action="fib" data-sym="${esc(entry.symbol)}">Fib levels</button>` : '';
+
   return `<div class="price-card">
-    <div class="pc-top">
-      <span class="pc-symbol">${entry.symbol}</span>
-      <span class="pc-type">${entry.type}</span>
-    </div>
+    <div class="pc-top"><span class="pc-symbol">${esc(entry.symbol)}</span><span class="pc-type">${esc(entry.type)}</span></div>
     <div class="pc-price">$${fmtPrice(entry.price)}${changeStr}</div>
     ${sparklineSvg(entry.sparkline)}
     <div class="pc-indicators">${inds.join('') || '<span class="pc-ind">Not enough history yet</span>'}</div>
-    ${conf}
+    ${confluenceHtml(entry.confluence)}
     <div class="pc-actions">
-      <button class="pc-mini-btn" onclick='openTimeframes(${JSON.stringify(entry.symbol)})'>Timeframes</button>
-      <button class="pc-mini-btn" onclick='openBacktest(${JSON.stringify(entry.symbol)})'>Backtest a rule</button>
-      ${entry.fibonacci ? `<button class="pc-mini-btn" onclick='openLevels(${JSON.stringify(entry.symbol)})'>Fib levels</button>` : ''}
+      <button class="pc-mini-btn" data-action="tf"  data-sym="${esc(entry.symbol)}">Timeframes</button>
+      <button class="pc-mini-btn" data-action="bt"  data-sym="${esc(entry.symbol)}">Backtest a rule</button>
+      ${fibBtn}
     </div>
-    <button class="pc-remove" onclick='removeAsset(${JSON.stringify(entry.symbol)})'>Untrack</button>
+    <button class="pc-remove" data-remove="${esc(entry.symbol)}">Untrack</button>
   </div>`;
 }
 
 let latestPriceSnapshot = {};
 let strongConfluenceOnly = false;
 
-// "Strong agreement" = a lopsided count where one direction (up/down) leads
-// the other by 3+ readings — still just describing how many indicators
-// currently point the same way, never a verdict about what happens next.
-function isStrongConfluence(entry){
-  const c = entry && entry.confluence;
-  if(!c) return false;
-  return Math.abs(c.up - c.down) >= 3;
+function isStrongConfluence(entry) {
+  const c = entry?.confluence;
+  return c ? Math.abs(c.up - c.down) >= 3 : false;
 }
 
-function renderPrices(){
+function renderPrices() {
   const grid = document.getElementById('priceGrid');
   let symbols = Object.keys(latestPriceSnapshot);
-  if(strongConfluenceOnly){
-    symbols = symbols.filter(s => isStrongConfluence(latestPriceSnapshot[s]));
-  }
+  if (strongConfluenceOnly) symbols = symbols.filter(s => isStrongConfluence(latestPriceSnapshot[s]));
   grid.innerHTML = symbols.length
     ? symbols.map(s => priceCardHtml(latestPriceSnapshot[s])).join('')
-    : `<div class="empty">${strongConfluenceOnly ? 'No tracked assets have strong indicator agreement right now.' : 'No assets tracked yet — add one below.'}</div>`;
+    : `<div class="empty">${strongConfluenceOnly ? 'No tracked assets have strong indicator agreement right now.' : 'No assets tracked yet.'}</div>`;
+
+  // Wire up price card buttons — event delegation on the grid
+  grid.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', () => removeAsset(btn.dataset.remove));
+  });
+  grid.querySelectorAll('[data-action]').forEach(btn => {
+    const { action, sym } = btn.dataset;
+    btn.addEventListener('click', () => {
+      if (action === 'tf')  openTimeframes(sym);
+      if (action === 'bt')  openBacktest(sym);
+      if (action === 'fib') openLevels(sym);
+    });
+  });
   renderHeatmap();
 }
 
-document.getElementById('strongConfluenceToggle').addEventListener('change', (e) => {
+document.getElementById('strongConfluenceToggle').addEventListener('change', e => {
   strongConfluenceOnly = e.target.checked;
   renderPrices();
 });
 
-async function loadPrices(){
-  try{
-    const res = await fetch('/api/prices');
+// Show skeletons while first price load is in flight
+function showPriceSkeletons(symbols) {
+  const grid = document.getElementById('priceGrid');
+  grid.innerHTML = symbols.map(s =>
+    `<div class="price-card skeleton"><div class="pc-symbol">${esc(s)}</div><div style="height:60px;"></div></div>`
+  ).join('');
+}
+
+async function loadPrices() {
+  const tracked = Object.keys(latestPriceSnapshot);
+  if (!tracked.length) {
+    // First load — show skeleton placeholders
+    try {
+      const assetsRes = await fetch('/api/assets');
+      const assetsData = await assetsRes.json();
+      showPriceSkeletons(assetsData.trackedAssets || []);
+    } catch { /* no-op */ }
+  }
+  try {
+    const res  = await fetch('/api/prices');
     const data = await res.json();
-    if(data.ok){
+    if (data.ok) {
       latestPriceSnapshot = data.snapshot;
       renderPrices();
       populateRiskAssetSelect();
       document.getElementById('pricesStatus').textContent = `updated ${new Date(data.updatedAt).toLocaleTimeString()}`;
     }
-  }catch(e){
+  } catch (e) {
     document.getElementById('pricesStatus').textContent = 'failed to load prices';
   }
   loadCorrelation();
 }
 
 // ---- Correlation matrix ----
-function corrColor(v){
-  if(v == null) return 'var(--dim)';
-  if(v >= 0.5) return 'var(--red)';       // strongly co-moving — less diversification benefit
-  if(v <= -0.3) return 'var(--mint)';     // moves opposite — real diversification
+function corrColor(v) {
+  if (v == null) return 'var(--dim)';
+  if (v >= 0.5)  return 'var(--red)';
+  if (v <= -0.3) return 'var(--mint)';
   return 'var(--text)';
 }
 
-async function loadCorrelation(){
-  const statusEl = document.getElementById('corrStatus');
-  const box = document.getElementById('corrMatrix');
-  try{
-    const res = await fetch('/api/correlation');
+async function loadCorrelation() {
+  const status = document.getElementById('corrStatus');
+  const box    = document.getElementById('corrMatrix');
+  try {
+    const res  = await fetch('/api/correlation');
     const data = await res.json();
-    if(!data.ok){ box.innerHTML = `<div class="empty">${data.reason}</div>`; statusEl.textContent=''; return; }
+    if (!data.ok) { box.innerHTML = `<div class="empty">${esc(data.reason)}</div>`; status.textContent = ''; return; }
     const { symbols, matrix, mostCorrelated, leastCorrelated } = data;
-    const head = symbols.map(s=>`<th>${s}</th>`).join('');
-    const rows = symbols.map((s,i)=>{
-      const cells = symbols.map((s2,j)=>{
+    const head = symbols.map(s => `<th>${esc(s)}</th>`).join('');
+    const rows = symbols.map((s, i) => {
+      const cells = symbols.map((_, j) => {
         const v = matrix[i][j];
-        if(i===j) return `<td class="diag">1.00</td>`;
-        return `<td style="color:${corrColor(v)}">${v==null?'—':v.toFixed(2)}</td>`;
+        if (i === j) return `<td class="diag">1.00</td>`;
+        return `<td style="color:${corrColor(v)}">${v == null ? '—' : v.toFixed(2)}</td>`;
       }).join('');
-      return `<tr><th>${s}</th>${cells}</tr>`;
+      return `<tr><th>${esc(s)}</th>${cells}</tr>`;
     }).join('');
-    const pairsHtml = (label, pairs) => pairs.length ? `<div class="grp"><b>${label}</b>${pairs.map(p=>`<div>${p.a} / ${p.b}: <span style="color:${corrColor(p.correlation)}">${p.correlation.toFixed(2)}</span></div>`).join('')}</div>` : '';
+    const pairsHtml = (label, pairs) => pairs.length
+      ? `<div class="grp"><b>${esc(label)}</b>${pairs.map(p =>
+          `<div>${esc(p.a)} / ${esc(p.b)}: <span style="color:${corrColor(p.correlation)}">${p.correlation.toFixed(2)}</span></div>`
+        ).join('')}</div>` : '';
     box.innerHTML = `<div style="overflow-x:auto;"><table class="corr-table"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
       <div class="corr-pairs">${pairsHtml('Most correlated', mostCorrelated)}${pairsHtml('Least / negatively correlated', leastCorrelated)}</div>`;
-    statusEl.textContent = '';
-  }catch(e){
+    status.textContent = '';
+  } catch {
     box.innerHTML = '<div class="empty">Failed to load correlation matrix.</div>';
   }
 }
 
-// ---- Modal shell (shared by Timeframes and Backtest panels) ----
-function showModal(innerHtml){
+// ---- Modal shell ----
+function showModal(innerHtml) {
   closeModal();
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.id = 'modalOverlay';
-  overlay.onclick = (e) => { if(e.target === overlay) closeModal(); };
+  overlay.className = 'modal-overlay'; overlay.id = 'modalOverlay';
+  overlay.onclick = e => { if (e.target === overlay) closeModal(); };
   overlay.innerHTML = `<div class="modal-box">${innerHtml}</div>`;
   document.body.appendChild(overlay);
 }
-function closeModal(){
-  const existing = document.getElementById('modalOverlay');
-  if(existing) existing.remove();
+function closeModal() {
+  document.getElementById('modalOverlay')?.remove();
 }
 
-// ---- Multi-timeframe viewer: same confluence counts as the price card,
-// computed independently at 1h/4h/1d. No verdict — just whether the
-// timeframes agree with each other. ----
-async function openTimeframes(symbol){
-  showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h3>${symbol} — timeframe agreement</h3><div id="tfBody">Loading…</div>`);
-  try{
-    const res = await fetch(`/api/multi-timeframe?symbol=${encodeURIComponent(symbol)}`);
+// ---- Multi-timeframe viewer ----
+async function openTimeframes(symbol) {
+  showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h3>${esc(symbol)} — timeframe agreement</h3><div id="tfBody">Loading…</div>`);
+  try {
+    const res  = await fetch(`/api/multi-timeframe?symbol=${encodeURIComponent(symbol)}`);
     const data = await res.json();
     const body = document.getElementById('tfBody');
-    if(!data.ok){ body.innerHTML = `<div class="tf-note">${data.reason}</div>`; return; }
-    const tfKeys = Object.keys(data.timeframes);
-    const rows = tfKeys.map(tf => {
+    if (!data.ok) { body.innerHTML = `<div class="tf-note">${esc(data.reason)}</div>`; return; }
+    const rows = Object.keys(data.timeframes).map(tf => {
       const c = data.timeframes[tf];
-      if(!c) return `<div class="tf-row"><span>${tf}</span><span>not enough history</span></div>`;
-      return `<div class="tf-row"><span>${tf}</span><span>${c.up} up · ${c.down} down · ${c.flat} flat</span></div>`;
+      if (!c) return `<div class="tf-row"><span>${esc(tf)}</span><span>not enough history</span></div>`;
+      return `<div class="tf-row"><span>${esc(tf)}</span><span>${c.up} up · ${c.down} down · ${c.flat} flat</span></div>`;
     }).join('');
-    const agree = data.trendAgreement ? `<div class="tf-row"><span>Trend across timeframes</span><span>${data.trendAgreement === 'mixed' ? 'mixed / disagree' : data.trendAgreement + ' on all three'}</span></div>` : '';
-    body.innerHTML = `${rows}${agree}<div class="tf-note">${data.note || 'Reading counts per timeframe — not a signal. Timeframes disagreeing is normal and doesn\'t mean one of them is "wrong."'}</div>`;
-  }catch(e){
+    const agree = data.trendAgreement
+      ? `<div class="tf-row"><span>Trend across timeframes</span><span>${data.trendAgreement === 'mixed' ? 'mixed / disagree' : esc(data.trendAgreement) + ' on all'}</span></div>`
+      : '';
+    body.innerHTML = `${rows}${agree}<div class="tf-note">${esc(data.note || 'Reading counts per timeframe — timeframes disagreeing is normal.')}</div>`;
+  } catch {
     document.getElementById('tfBody').innerHTML = '<div class="tf-note">Failed to load.</div>';
   }
 }
 
-// ---- Fibonacci retracement levels for the trailing swing high/low ----
-function openLevels(symbol){
+// ---- Fibonacci levels ----
+function openLevels(symbol) {
   const entry = latestPriceSnapshot[symbol];
-  const fib = entry && entry.fibonacci;
-  if(!fib){ return; }
+  const fib   = entry?.fibonacci;
+  if (!fib) return;
   const rows = fib.levels.map(l => {
     const near = entry.price != null && Math.abs(entry.price - l.price) / entry.price < 0.005;
-    return `<div class="tf-row${near?'':''}"><span>${(l.ratio*100).toFixed(1)}%</span><span>$${fmtPrice(l.price)}${near ? ' ← price is near here' : ''}</span></div>`;
+    return `<div class="tf-row"><span>${(l.ratio * 100).toFixed(1)}%</span><span>$${fmtPrice(l.price)}${near ? ' ← near here' : ''}</span></div>`;
   }).join('');
   showModal(`<button class="modal-close" onclick="closeModal()">&times;</button>
-    <h3>${symbol} — Fibonacci retracement</h3>
-    <div class="tf-row"><span>Swing (trailing ~90 bars)</span><span>$${fmtPrice(fib.swingLow)} – $${fmtPrice(fib.swingHigh)}, ${fib.direction}</span></div>
+    <h3>${esc(symbol)} — Fibonacci retracement</h3>
+    <div class="tf-row"><span>Swing</span><span>$${fmtPrice(fib.swingLow)} – $${fmtPrice(fib.swingHigh)}, ${esc(fib.direction)}</span></div>
     ${rows}
-    <div class="tf-note">Pure arithmetic on the recent price range — a commonly-watched reference grid, not a claim that price respects these levels.</div>`);
+    <div class="tf-note">Pure arithmetic on recent price range — a reference grid, not a claim price respects these levels.</div>`);
 }
 
-// ---- Backtest: the user writes the rule; this reports historical
-// frequency only. No pre-filled "good" rule, no recommendation of which
-// metric/operator to pick. ----
+// ---- Backtest ----
+// Fixed: original sent each condition as its own group (outer OR-array of
+// single-element arrays), which prevented AND-logic from working across
+// conditions. Now all conditions in the main list are combined into ONE
+// group (AND'd), with explicit "Add OR group" for separate OR branches.
 let rulesMeta = null;
-async function loadRulesMeta(){
-  if(rulesMeta) return rulesMeta;
+async function loadRulesMeta() {
+  if (rulesMeta) return rulesMeta;
   const res = await fetch('/api/rules-metadata');
   rulesMeta = await res.json();
   return rulesMeta;
 }
 
-function btConditionRowHtml(meta){
-  const metricOpts = meta.metrics.map(m => `<option value="${m}">${m}</option>`).join('');
-  const opOpts = meta.operators.map(o => `<option value="${o}">${o}</option>`).join('');
+function btConditionRowHtml(meta) {
+  const metricOpts = meta.metrics.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  const opOpts     = meta.operators.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
   return `<div class="bt-row bt-cond-row">
     <select class="btMetric">${metricOpts}</select>
     <select class="btOperator">${opOpts}</select>
-    <input class="btValue" type="number" step="any" placeholder="value e.g. 30" />
+    <input class="btValue" type="number" step="any" placeholder="value e.g. 30">
   </div>`;
 }
 
-async function openBacktest(symbol){
+async function openBacktest(symbol) {
   const meta = await loadRulesMeta();
   showModal(`<button class="modal-close" onclick="closeModal()">&times;</button>
-    <h3>${symbol} — backtest your own rule</h3>
+    <h3>${esc(symbol)} — backtest your own rule</h3>
     <div class="bt-form">
-      <label>If ANY of these are true (add more rows for "OR")</label>
+      <label>All of these must be true (AND)</label>
       <div id="btConditions">${btConditionRowHtml(meta)}</div>
-      <button class="pc-mini-btn" type="button" onclick='addBtCondition()'>+ Add OR condition</button>
-      <label style="margin-top:10px;display:block;">...then check price this many days later</label>
-      <input id="btHorizon" type="number" min="1" max="30" value="5" />
+      <button class="pc-mini-btn" type="button" id="btAddCond">+ Add AND condition</button>
+      <label style="margin-top:10px;display:block;">Check price this many days later</label>
+      <input id="btHorizon" type="number" min="1" max="30" value="5">
       <label class="check" style="margin-top:8px;">
         <input type="checkbox" id="btWalkForward" checked style="accent-color:var(--mint);">
-        Walk-forward check (split history into periods to check consistency)
+        Walk-forward check (split history into periods)
       </label>
-      <button class="bt-submit" onclick='runBacktest(${JSON.stringify(symbol)})'>Run backtest</button>
+      <button class="bt-submit" id="btRunBtn">Run backtest</button>
     </div>
     <div id="btResult"></div>`);
+
+  document.getElementById('btAddCond').addEventListener('click', async () => {
+    const m = await loadRulesMeta();
+    document.getElementById('btConditions').insertAdjacentHTML('beforeend', btConditionRowHtml(m));
+  });
+  document.getElementById('btRunBtn').addEventListener('click', () => runBacktest(symbol));
 }
 
-async function addBtCondition(){
-  const meta = await loadRulesMeta();
-  document.getElementById('btConditions').insertAdjacentHTML('beforeend', btConditionRowHtml(meta));
-}
-
-async function runBacktest(symbol){
+async function runBacktest(symbol) {
+  // Collect all condition rows as one AND-group (one entry in the groups array)
   const rows = [...document.querySelectorAll('#btConditions .bt-cond-row')];
-  const groups = rows.map(row => [{
-    metric: row.querySelector('.btMetric').value,
+  const conditions = rows.map(row => ({
+    metric:   row.querySelector('.btMetric').value,
     operator: row.querySelector('.btOperator').value,
-    value: row.querySelector('.btValue').value,
-  }]);
+    value:    row.querySelector('.btValue').value,
+  }));
+  // Send as groups: [[cond1, cond2, ...]] — one group means all are AND'd
+  const groups      = [conditions];
   const horizonDays = document.getElementById('btHorizon').value;
   const walkForward = document.getElementById('btWalkForward').checked;
-  const resultEl = document.getElementById('btResult');
+  const resultEl    = document.getElementById('btResult');
   resultEl.innerHTML = '<div class="tf-note">Running…</div>';
-  try{
-    const res = await fetch('/api/backtest', {
-      method: 'POST',
-      headers: {'content-type': 'application/json'},
+  try {
+    const res  = await fetch('/api/backtest', {
+      method: 'POST', headers: {'content-type':'application/json'},
       body: JSON.stringify({ symbol, groups, horizonDays, walkForward }),
     });
     const data = await res.json();
-    if(!data.ok){ resultEl.innerHTML = `<div class="tf-note">${data.reason}</div>`; return; }
-    const wf = data.walkForward;
+    if (!data.ok) { resultEl.innerHTML = `<div class="tf-note">${esc(data.reason)}</div>`; return; }
+    const wf    = data.walkForward;
     const wfHtml = wf ? `
-      <div class="tf-note" style="margin-top:10px;font-weight:600;color:var(--text);">Walk-forward check (split into ${wf.folds.length} sequential periods)</div>
+      <div class="tf-note" style="margin-top:10px;font-weight:600;color:var(--text);">Walk-forward (${wf.folds.length} sequential periods)</div>
       ${wf.folds.map(f => `<div class="tf-row"><span>Period ${f.fold}</span><span>${f.sampleSize ? `${f.sampleSize} fires · ${f.upRate}% up` : 'no fires'}</span></div>`).join('')}
-      <div class="tf-note">${wf.note}</div>` : '';
+      <div class="tf-note">${esc(wf.note)}</div>` : '';
     resultEl.innerHTML = `<div class="bt-result">
       <div class="tf-row"><span>Historical occurrences</span><span>${data.sampleSize} (of ${data.historyLength} days)</span></div>
       <div class="tf-row"><span>Up afterward</span><span>${data.up} (${data.upRate ?? '—'}%)</span></div>
       <div class="tf-row"><span>Down afterward</span><span>${data.down} (${data.downRate ?? '—'}%)</span></div>
       <div class="tf-row"><span>Flat</span><span>${data.flat}</span></div>
       <div class="tf-row"><span>Avg % change</span><span>${data.avgPctChange ?? '—'}%</span></div>
-      <div class="bt-caveat">${data.caveat}</div>
+      <div class="bt-caveat">${esc(data.caveat)}</div>
       ${wfHtml}
     </div>`;
-  }catch(e){
+  } catch {
     resultEl.innerHTML = '<div class="tf-note">Backtest failed.</div>';
   }
 }
 
-document.getElementById('addAssetBtn').addEventListener('click', async ()=>{
+// ---- Asset tracking ----
+document.getElementById('addAssetBtn').addEventListener('click', async () => {
   const input = document.getElementById('assetSymbolInput');
-  const sym = input.value.trim().toUpperCase();
-  if(!sym) return;
+  const sym   = input.value.trim().toUpperCase();
+  if (!sym) return;
   const current = Object.keys(latestPriceSnapshot);
-  const next = [...new Set([...current, sym])];
-  const res = await fetch('/api/assets', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({symbols: next})});
-  const data = await res.json();
-  const hint = document.getElementById('assetHint');
-  if(!data.ok){ hint.textContent = data.reason; hint.style.color = 'var(--red)'; return; }
+  const next    = [...new Set([...current, sym])];
+  const res     = await fetch('/api/assets', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({symbols:next}) });
+  const data    = await res.json();
+  const hint    = document.getElementById('assetHint');
+  if (!data.ok) { hint.textContent = data.reason; hint.style.color = 'var(--red)'; return; }
   hint.textContent = ''; input.value = '';
   await loadPrices();
 });
 
-async function removeAsset(sym){
+async function removeAsset(sym) {
   const next = Object.keys(latestPriceSnapshot).filter(s => s !== sym);
-  const res = await fetch('/api/assets', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({symbols: next})});
+  const res  = await fetch('/api/assets', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({symbols:next}) });
   const data = await res.json();
-  if(data.ok) await loadPrices();
+  if (data.ok) await loadPrices();
 }
 
 // ---- Alerts ----
-function alertRowHtml(a){
+function alertRowHtml(a) {
   const sevClass = a.severity === 'strong' ? 'strong' : 'mild';
-  const badge = a.severity === 'strong' ? '<span class="sev-badge">Strong</span>' : '<span class="sev-badge">Mild</span>';
+  const badge    = a.severity === 'strong' ? '<span class="sev-badge">Strong</span>' : '<span class="sev-badge">Mild</span>';
   return `<div class="alert-row ${sevClass}">
     <div class="alert-main">
-      <div class="alert-label">${badge}${a.label}</div>
-      <div class="alert-note">${a.note}</div>
+      <div class="alert-label">${badge}${esc(a.label)}</div>
+      <div class="alert-note">${esc(a.note)}</div>
     </div>
     <div class="alert-time">${fmtTime(a.at)}</div>
   </div>`;
 }
 
-let allAlerts = [];
+let allAlerts       = [];
 let strongAlertsOnly = false;
-function renderAlerts(){
-  const panel = document.getElementById('alertsPanel');
-  const list = document.getElementById('alertsList');
-  if(!allAlerts.length){ panel.style.display = 'none'; return; }
+function renderAlerts() {
+  const panel   = document.getElementById('alertsPanel');
+  const list    = document.getElementById('alertsList');
+  if (!allAlerts.length) { panel.style.display = 'none'; return; }
   panel.style.display = 'block';
   const visible = strongAlertsOnly ? allAlerts.filter(a => a.severity === 'strong') : allAlerts;
   document.getElementById('alertsStatus').textContent = strongAlertsOnly
     ? `${visible.length} strong of ${allAlerts.length} recent`
     : `${allAlerts.length} recent`;
   list.innerHTML = visible.length
-    ? visible.slice(0,20).map(alertRowHtml).join('')
+    ? visible.slice(0, 20).map(alertRowHtml).join('')
     : '<div class="empty">No strong alerts right now.</div>';
 }
 
-document.getElementById('strongAlertsToggle').addEventListener('change', (e) => {
-  strongAlertsOnly = e.target.checked;
-  renderAlerts();
+document.getElementById('strongAlertsToggle').addEventListener('change', e => {
+  strongAlertsOnly = e.target.checked; renderAlerts();
 });
 
-async function loadAlerts(){
-  const res = await fetch('/api/alerts?limit=50');
+async function loadAlerts() {
+  const res  = await fetch('/api/alerts?limit=50');
   const data = await res.json();
-  allAlerts = data.alerts || [];
+  allAlerts  = data.alerts || [];
   renderAlerts();
 }
 
@@ -1031,116 +1157,119 @@ document.querySelectorAll('.risk-tab').forEach(tab => {
     tab.classList.add('active');
     const isSize = tab.dataset.risktab === 'size';
     document.getElementById('riskSizeForm').style.display = isSize ? 'block' : 'none';
-    document.getElementById('riskAtrForm').style.display = isSize ? 'none' : 'block';
+    document.getElementById('riskAtrForm').style.display  = isSize ? 'none'  : 'block';
   });
 });
 
-function riskRow(label, value){
-  return `<div class="rr-row"><span>${label}</span><b>${value}</b></div>`;
+function riskRow(label, value) {
+  return `<div class="rr-row"><span>${esc(label)}</span><b>${esc(String(value))}</b></div>`;
 }
 
 document.getElementById('rsCalcBtn').addEventListener('click', async () => {
   const body = {
     accountSize: document.getElementById('rsAccount').value,
-    riskPct: document.getElementById('rsRiskPct').value,
-    entryPrice: document.getElementById('rsEntry').value,
-    stopPrice: document.getElementById('rsStop').value,
+    riskPct:     document.getElementById('rsRiskPct').value,
+    entryPrice:  document.getElementById('rsEntry').value,
+    stopPrice:   document.getElementById('rsStop').value,
     targetPrice: document.getElementById('rsTarget').value,
   };
-  const res = await fetch('/api/risk/position-size', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body)});
+  const res  = await fetch('/api/risk/position-size', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
   const data = await res.json();
-  const out = document.getElementById('rsResult');
-  if(!data.ok){
-    out.innerHTML = `<div class="risk-error">${(data.errors||['Something went wrong.']).join(' ')}</div>`;
-    return;
-  }
+  const out  = document.getElementById('rsResult');
+  if (!data.ok) { out.innerHTML = `<div class="risk-error">${esc((data.errors || ['Something went wrong.']).join(' '))}</div>`; return; }
   out.innerHTML = `<div class="risk-result">
     ${riskRow('Direction', data.direction)}
     ${riskRow('Risk per unit', '$' + data.riskPerUnit)}
     ${riskRow('Dollar risk', '$' + data.dollarRisk)}
-    ${riskRow('Units to buy/sell', data.wholeUnits)}
+    ${riskRow('Units', data.wholeUnits)}
     ${riskRow('Position value', '$' + data.positionValue)}
-    ${riskRow('% of account in position', data.accountPctInPosition + '%')}
-    ${data.rewardRiskRatio != null ? riskRow('Reward:risk ratio', data.rewardRiskRatio + ':1') : ''}
-    <div class="risk-note">${data.note}</div>
+    ${riskRow('% of account', data.accountPctInPosition + '%')}
+    ${data.rewardRiskRatio != null ? riskRow('Reward:risk', data.rewardRiskRatio + ':1') : ''}
+    <div class="risk-note">${esc(data.note)}</div>
   </div>`;
 });
 
-function populateRiskAssetSelect(){
-  const sel = document.getElementById('raSymbol');
-  const prev = sel.value;
-  const symbols = Object.keys(latestPriceSnapshot || {});
-  sel.innerHTML = symbols.map(s => `<option value="${s}">${s}</option>`).join('');
-  if(symbols.includes(prev)) sel.value = prev;
+function populateRiskAssetSelect() {
+  const sel   = document.getElementById('raSymbol');
+  const prev  = sel.value;
+  const syms  = Object.keys(latestPriceSnapshot || {});
+  sel.innerHTML = syms.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  if (syms.includes(prev)) sel.value = prev;
 }
 
 document.getElementById('raCalcBtn').addEventListener('click', async () => {
   const body = {
-    symbol: document.getElementById('raSymbol').value,
+    symbol:     document.getElementById('raSymbol').value,
     entryPrice: document.getElementById('raEntry').value,
-    multiple: document.getElementById('raMultiple').value,
-    direction: document.getElementById('raDirection').value,
+    multiple:   document.getElementById('raMultiple').value,
+    direction:  document.getElementById('raDirection').value,
   };
-  if(!body.symbol){
-    document.getElementById('raResult').innerHTML = `<div class="risk-error">Track at least one asset in the price panel above first.</div>`;
-    return;
-  }
-  const res = await fetch('/api/risk/atr-stop', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body)});
+  if (!body.symbol) { document.getElementById('raResult').innerHTML = `<div class="risk-error">Track at least one asset above first.</div>`; return; }
+  const res  = await fetch('/api/risk/atr-stop', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
   const data = await res.json();
-  const out = document.getElementById('raResult');
-  if(!data.ok){
-    out.innerHTML = `<div class="risk-error">${(data.errors||['Something went wrong.']).join(' ')}</div>`;
-    return;
-  }
+  const out  = document.getElementById('raResult');
+  if (!data.ok) { out.innerHTML = `<div class="risk-error">${esc((data.errors || ['Something went wrong.']).join(' '))}</div>`; return; }
   out.innerHTML = `<div class="risk-result">
     ${riskRow('Symbol', data.symbol)}
     ${riskRow('Current price', '$' + data.currentPrice)}
     ${riskRow('ATR(14)', data.atr14)}
     ${riskRow('Multiple', data.multiple + '×')}
     ${riskRow('Distance', '$' + data.distance)}
-    ${riskRow('Resulting stop price', '$' + data.stopPrice)}
-    <div class="risk-note">${data.note}</div>
+    ${riskRow('Resulting stop', '$' + data.stopPrice)}
+    <div class="risk-note">${esc(data.note)}</div>
   </div>`;
 });
 
-// ---- TradingView any-symbol tracker (stocks/crypto/forex/indices/futures) ----
+// ---- TradingView any-symbol tracker ----
+// Fixed: prior implementation leaked DOM nodes every time selectTvSymbol was
+// called because mountTvWidget set innerHTML on the container but the old
+// <script> tags remained in memory. Now we replace the entire container div.
 let tvSymbols = [];
-let tvActive = null;
+let tvActive  = null;
 
-function mountTvWidget(containerId, src, config){
+function mountTvWidget(containerId, src, config) {
   const el = document.getElementById(containerId);
-  if(!el) return;
-  el.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
+  if (!el) return;
+  // Clean slate — remove the old container and create a fresh one
+  const fresh = document.createElement('div');
+  fresh.className = 'tradingview-widget-container';
+  fresh.id = containerId;
+  el.parentNode.replaceChild(fresh, el);
+  const inner  = document.createElement('div');
+  inner.className = 'tradingview-widget-container__widget';
+  fresh.appendChild(inner);
   const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = src;
+  script.type  = 'text/javascript';
+  script.src   = src;
   script.async = true;
-  script.innerHTML = JSON.stringify(config);
-  el.appendChild(script);
+  script.textContent = JSON.stringify(config);
+  fresh.appendChild(script);
 }
 
-function mountTvTickerTape(){
+function mountTvTickerTape() {
   mountTvWidget('tvTickerTape', 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js', {
     symbols: tvSymbols.map(s => ({ proName: s, title: s.includes(':') ? s.split(':')[1] : s })),
     showSymbolLogo: true, colorTheme: 'dark', isTransparent: true, displayMode: 'compact', locale: 'en',
   });
 }
 
-function renderTvChips(){
+function renderTvChips() {
   const wrap = document.getElementById('tvChips');
-  wrap.innerHTML = tvSymbols.map(s => `
-    <div class="chip ${s===tvActive?'active':''}" data-sym="${s}">
-      <span>${s}</span><button data-remove="${s}" title="Untrack">×</button>
-    </div>`).join('') || '<span class="status">No symbols tracked yet — add one below.</span>';
-  wrap.querySelectorAll('.chip').forEach(chip=>{
-    chip.addEventListener('click', (e)=>{ if(e.target.closest('button')) return; selectTvSymbol(chip.dataset.sym); });
+  if (!tvSymbols.length) { wrap.innerHTML = '<span class="status">No symbols tracked yet.</span>'; return; }
+  wrap.innerHTML = tvSymbols.map(s =>
+    `<div class="chip ${s === tvActive ? 'active' : ''}" data-sym="${esc(s)}">
+      <span>${esc(s)}</span><button data-remove="${esc(s)}" title="Untrack" aria-label="Untrack ${esc(s)}">×</button>
+    </div>`
+  ).join('');
+  wrap.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', e => { if (e.target.closest('button')) return; selectTvSymbol(chip.dataset.sym); });
   });
-  wrap.querySelectorAll('button[data-remove]').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{ e.stopPropagation(); removeTvSymbol(btn.dataset.remove); });
+  wrap.querySelectorAll('button[data-remove]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); removeTvSymbol(btn.dataset.remove); });
   });
 }
 
-function selectTvSymbol(sym){
+function selectTvSymbol(sym) {
   tvActive = sym;
   renderTvChips();
   mountTvWidget('tvSymbolInfo', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
@@ -1148,51 +1277,59 @@ function selectTvSymbol(sym){
   });
   mountTvWidget('tvChart', 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js', {
     symbol: sym, interval: 'D', timezone: 'Etc/UTC', theme: 'dark', style: '1', locale: 'en',
-    enable_publishing: false, allow_symbol_change: false, hide_top_toolbar: false, hide_legend: false,
+    enable_publishing: false, allow_symbol_change: false, hide_top_toolbar: false,
     save_image: false, calendar: false, support_host: 'https://www.tradingview.com', autosize: true,
   });
   mountTvWidget('tvTa', 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js', {
-    interval: '1D', width: '100%', isTransparent: true, height: '100%', symbol: sym,
-    showIntervalTabs: true, locale: 'en', colorTheme: 'dark',
+    interval: '1D', width: '100%', isTransparent: true, height: '100%',
+    symbol: sym, showIntervalTabs: true, locale: 'en', colorTheme: 'dark',
   });
 }
 
-async function saveTvSymbols(list){
-  const res = await fetch('/api/tv-symbols', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({symbols:list})});
+async function saveTvSymbols(list) {
+  const res  = await fetch('/api/tv-symbols', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({symbols:list}) });
   const data = await res.json();
-  if(data.ok) tvSymbols = data.symbols;
+  if (data.ok) tvSymbols = data.symbols;
   return data.ok;
 }
 
-async function loadTvSymbols(){
-  const res = await fetch('/api/tv-symbols');
+async function loadTvSymbols() {
+  const res  = await fetch('/api/tv-symbols');
   const data = await res.json();
-  tvSymbols = data.symbols || [];
+  tvSymbols  = data.symbols || [];
   renderTvChips();
   mountTvTickerTape();
-  if(tvSymbols.length) selectTvSymbol(tvSymbols[0]);
+  if (tvSymbols.length) selectTvSymbol(tvSymbols[0]);
 }
 
-document.getElementById('addTvSymbolBtn').addEventListener('click', async ()=>{
+document.getElementById('addTvSymbolBtn').addEventListener('click', async () => {
   const input = document.getElementById('tvSymbolInput');
-  const sym = input.value.trim().toUpperCase();
-  if(!sym) return;
+  const sym   = input.value.trim().toUpperCase().slice(0, 50);
+  if (!sym) return;
   const next = [...new Set([...tvSymbols, sym])];
-  const ok = await saveTvSymbols(next);
-  if(ok){ input.value = ''; renderTvChips(); mountTvTickerTape(); selectTvSymbol(sym); }
+  const ok   = await saveTvSymbols(next);
+  if (ok) { input.value = ''; renderTvChips(); mountTvTickerTape(); selectTvSymbol(sym); }
 });
-document.getElementById('tvSymbolInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') document.getElementById('addTvSymbolBtn').click(); });
+document.getElementById('tvSymbolInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('addTvSymbolBtn').click();
+});
 
-async function removeTvSymbol(sym){
+async function removeTvSymbol(sym) {
   const next = tvSymbols.filter(s => s !== sym);
-  const ok = await saveTvSymbols(next);
-  if(!ok) return;
+  const ok   = await saveTvSymbols(next);
+  if (!ok) return;
   mountTvTickerTape();
-  if(tvActive === sym) { tvActive = null; if(tvSymbols.length) selectTvSymbol(tvSymbols[0]); else renderTvChips(); }
-  else renderTvChips();
+  if (tvActive === sym) {
+    tvActive = null;
+    if (tvSymbols.length) selectTvSymbol(tvSymbols[0]);
+    else renderTvChips();
+  } else {
+    renderTvChips();
+  }
 }
 
-(async function init(){
+// ---- Init ----
+(async function init() {
   await loadConfig();
   await loadFeed();
   await loadPrices();
